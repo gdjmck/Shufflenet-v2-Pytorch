@@ -1,4 +1,8 @@
+import os
+import numpy as np
 import torch.utils.data.Dataset as Dataset
+import torchvision.transforms.functional as functional
+from PIL import Image
 
 class BBox():
     def __init__(self, data):
@@ -10,8 +14,8 @@ class BBox():
 class LabelData():
     def __init__(self, label, root='MAFA/images/'):
         self.root = root
-        self.filename = label[0]
-        self.img = cv2.imread(root+self.filename, -1)
+        self.filename = os.path.join(root, label[0])
+        #self.img = cv2.imread(root+self.filename, -1)
         self.face_box = BBox(label[1: 5])
         self.eye_pos = label[5: 9].astype(int)
         self.occ_box = BBox(label[9: 13])
@@ -49,21 +53,36 @@ class LabelData():
 
 
 class Faceset(Dataset):
-    def __init__(self, anno_file, image_folder):
+    def __init__(self, anno_file, image_folder, in_size=128):
         super(self, Dataset).__init__()
         self.anno = np.loads(anno_file)
         self.image_folder = image_folder
+        self.in_size = in_size
         
     def __len__(self):
         return self.anno.shape[0]
     
     def __getitem__(self, idx):
         label = LabelData(self.anno[idx, :], self.image_folder)
-        img = label
-        height, width = img.shape[:2]
-        pad = abs(height-width) // 2
+        img = Image.open(label.filename).convert('RGB')
+        width, height = img.size
+        pad = abs(height-width)
+        padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
+        img = functional.pad(img, padding)
         confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
-        cx, cy, w, h = (label.face_box.x + label.face_box.width/2) / width, 
-                        (label.face_box.y + label.face_box.height/2) / height,
+        width, height = img.size
+        cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, 
+                        (padding[1] + label.face_box.y + label.face_box.height/2) / height,
                         label.face_box.width / width,
                         label.face_box.height / height
+        
+        eye_pos = label.eye_pos().tolist()
+        eye_pos[0] = (eye_pos[0] + padding[0]) / width
+        eye_pos[1] = (eye_pos[1] + padding[1]) / height
+        eye_pos[2] = (eye_pos[2] + padding[0]) / width
+        eye_pos[3] = (eye_pos[3] + padding[1]) / height
+
+        y = [cx, cy, w, h] + eye_pos + [confidence]
+        img = functional.resize(img, (self.in_size, self.in_size))
+
+        return functional.to_tensor(img), y
