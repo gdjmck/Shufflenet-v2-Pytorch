@@ -73,6 +73,7 @@ class Faceset(data.Dataset):
         return self.anno.shape[0]
     
     def __getitem__(self, idx):
+        print('getitem %d'%idx)
         label = LabelData(self.anno[idx, :], self.image_folder)
         img = Image.open(label.filename).convert('RGB')
         width, height = img.size
