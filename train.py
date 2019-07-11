@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 import argparse
 import ShuffleNetV2
 import dataset
@@ -21,15 +22,22 @@ def get_args():
 
 
 class Criterion(nn.Module):
-    def __init__(self, weights=[0.4, 1, 0.5], batch_size=4, device=torch.device('cuda')):
+    def __init__(self, weights=[0.5, 0.1, 1], batch_size=4, device=torch.device('cuda')):
         super(Criterion, self).__init__()
         self.loss_func = nn.SmoothL1Loss(reduction='none')
-        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]]*4 + [weights[2]]).repeat(batch_size, 1).to(device)
+        assert len(weights) == 3
+        self.w_face_bb, self.w_eye, self.w_conf = weights
+        self.face_mask = torch.Tensor([1]*4 + [0]*5).repeat(batch_size, 1).to(device)
+        self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]).repeat(batch_size, 1).to(device)
+        self.conf_mask = torch.Tensor([0]*8+[1]).repeat(batch_size, 1).to(device)
 
     def __call__(self, gt, pred):
         loss = self.loss_func(gt, pred)
-        loss = (loss * self.face_mask).mean()
-        return loss
+        loss_face = (loss * self.face_mask).sum()
+        loss_eye = (loss * self.eye_mask).sum()
+        loss_conf = (loss * self.conf_mask).sum()
+        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.conf_mask * self.w_conf)).mean()
+        return loss_optim, loss_face, loss_eye, loss_conf
 
 
 if __name__ == '__main__':
@@ -45,17 +53,31 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch, device=device)
 
+    best_conf_loss = np.Inf
+    print('Start training from epoch %d'%args.epoch_start)
     for epoch in range(args.epoch_start, args.epochs):
         
+        sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
         for i, batch in enumerate(data):
             x, y = batch
             x, y = x.to(device), y.to(device)
-            print('x:', x.dtype, '\ty:', y.dtype)
-            print('x shape:', x.shape, 'y shape:', y.shape)
+            #print('x:', x.dtype, '\ty:', y.dtype)
+            #print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
-            print('pred shape:', pred.shape, pred.dtype)
+            #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
-            loss = criterion(y, pred)
+            loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
             loss.backward()
             optimizer.step()
+
+            sum_loss += loss.item()
+            sum_face += loss_face.item()
+            sum_eye += loss_eye.item()
+            sum_conf += loss_conf.item()
+            print('\tBatch %d total loss: %.2f\tface:%.2f\teye:%.2f\tconf:%.2f'% \
+                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+        
+        print('End of Epoch %d'%epoch)
+        if best_conf_loss > sum_conf:
+            best_conf_loss = sum_conf
