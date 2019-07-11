@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import argparse
 import ShuffleNetV2
 import dataset
@@ -17,6 +18,18 @@ def get_args():
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
 
+
+class Criterion(nn.Module):
+    def __init__(self, weights=[0.4, 1, 0.5], batch_size=4):
+        super(Criterion, self).__init__()
+        self.loss_func = nn.SmoothL1Loss(reduction='none')
+        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]*4] + [weights[2]]).repeat(batch_size, 1)
+
+    def __call__(self, gt, pred):
+        loss = (self.loss_func(gt, pred) * self.face_mask).mean
+        return loss
+
+
 if __name__ == '__main__':
     args = get_args()
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
@@ -29,3 +42,5 @@ if __name__ == '__main__':
             x, y = batch
             print('x:', type(x), '\ty:', type(y))
             print('x shape:', x.shape, 'y shape:', y.shape)
+            pred = model(x)
+            print('pred shape:', pred.shape)
