@@ -38,7 +38,7 @@ if __name__ == '__main__':
                                 batch_size=args.batch, shuffle=True, num_workers=4) 
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
-    device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
+    device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
