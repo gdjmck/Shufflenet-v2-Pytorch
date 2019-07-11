@@ -52,10 +52,20 @@ class LabelData():
                         self.face_box.x: self.face_box.x+self.face_box.width, ...]
 
 
+def parse_anno(file):
+    lines = file.readlines()
+    anno = np.empty((len(lines), 23))
+    for i, line in enumerate(lines):
+        line = line[:-1]
+        anno[i, :] = line.split(' ')
+    return anno
+
 class Faceset(Dataset):
     def __init__(self, anno_file, image_folder, in_size=128):
         super(self, Dataset).__init__()
-        self.anno = np.loads(anno_file)
+        assert anno_file.endswith('.txt')
+        with open(anno_file, 'r') as f:
+            self.anno = parse_anno(f)
         self.image_folder = image_folder
         self.in_size = in_size
         
