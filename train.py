@@ -24,7 +24,7 @@ class Criterion(nn.Module):
     def __init__(self, weights=[0.4, 1, 0.5], batch_size=4):
         super(Criterion, self).__init__()
         self.loss_func = nn.SmoothL1Loss(reduction='none')
-        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]]*4 + [weights[2]], dtype=torch.float32).repeat(batch_size, 1)
+        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]]*4 + [weights[2]]).repeat(batch_size, 1)
 
     def __call__(self, gt, pred):
         loss = self.loss_func(gt, pred)
