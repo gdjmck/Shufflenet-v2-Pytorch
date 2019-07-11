@@ -27,4 +27,5 @@ if __name__ == '__main__':
         
         for i, batch in enumerate(data):
             x, y = batch
-            print(x.shape, y.shape)
+            print('x:', type(x), '\ty:', type(y))
+            print(y)

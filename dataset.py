@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.utils.data as data
 import torchvision.transforms.functional as functional
+import torchvision.transforms.transforms as transforms
 from PIL import Image
 
 class BBox():
@@ -14,7 +15,6 @@ class BBox():
 
 class LabelData():
     def __init__(self, label, root='MAFA/images/'):
-        print('\tlabel: ', label)
         self.root = root
         self.filename = os.path.join(root, label[0])
         #self.img = cv2.imread(root+self.filename, -1)
@@ -68,12 +68,12 @@ class Faceset(data.Dataset):
             self.anno = parse_anno(f)
         self.image_folder = image_folder
         self.in_size = in_size
+        self.transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
         
     def __len__(self):
         return self.anno.shape[0]
     
     def __getitem__(self, idx):
-        print('getitem %d'%idx)
         label = LabelData(self.anno[idx, :], self.image_folder)
         img = Image.open(label.filename).convert('RGB')
         width, height = img.size
@@ -95,5 +95,6 @@ class Faceset(data.Dataset):
 
         y = [cx, cy, w, h] + eye_pos + [confidence]
         img = functional.resize(img, (self.in_size, self.in_size))
+        img = self.transforms(img)
 
         return functional.to_tensor(img), y
