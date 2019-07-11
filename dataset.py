@@ -14,6 +14,7 @@ class BBox():
 
 class LabelData():
     def __init__(self, label, root='MAFA/images/'):
+        print('\tlabel: ', label)
         self.root = root
         self.filename = os.path.join(root, label[0])
         #self.img = cv2.imread(root+self.filename, -1)
