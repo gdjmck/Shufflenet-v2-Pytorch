@@ -154,13 +154,20 @@ class ShuffleNetV2(nn.Module):
         self.classifier = nn.Sequential(nn.Linear(self.stage_out_channels[-1], n_class))
 
     def forward(self, x):
+        print('\tmodel input:', x.shape)
         x = self.conv1(x)
+        print('\tconv1:', x.shape)
         x = self.maxpool(x)
+        print('\tmaxpool:', x.shape)
         x = self.features(x)
+        print('\tfeatures:', x.shape)
         x = self.conv_last(x)
+        print('\tconv last:', x.shape)
         #x = self.globalpool(x)
         x = x.view(-1, self.stage_out_channels[-1])
+        print('\tflatten:', x.shape)
         x = self.classifier(x)
+        print('\tmodel output:', x.shape)
         return x
 
 def shufflenetv2(width_mult=1.):
