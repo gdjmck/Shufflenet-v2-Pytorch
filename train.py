@@ -11,6 +11,7 @@ def get_args():
     parser.add_argument('--epochs', type=int, default=200, help='number of epochs plans to train in total')
     parser.add_argument('--epoch_start', type=int, default=0, help='start epoch to count from')
     parser.add_argument('--batch', type=int, default=8, help='batch size')
+    parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     # annotation
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
@@ -32,15 +33,28 @@ class Criterion(nn.Module):
 
 if __name__ == '__main__':
     args = get_args()
+    # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4) 
+    # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
+    device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
+    model.to(device)
+    # setup optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    criterion = Criterion(weights=(0.5, 0.1, 1))
 
     for epoch in range(args.epoch_start, args.epochs):
         
         for i, batch in enumerate(data):
             x, y = batch
+            x = x.to(device)
             print('x:', type(x), '\ty:', type(y))
             print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
             print('pred shape:', pred.shape)
+
+            optimizer.zero_grad()
+            loss = criterion(y, pred)
+            loss.backward()
+            optimizer.step()
