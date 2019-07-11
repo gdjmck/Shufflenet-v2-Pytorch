@@ -49,10 +49,10 @@ if __name__ == '__main__':
         for i, batch in enumerate(data):
             x, y = batch
             x = x.to(device)
-            print('x:', type(x), '\ty:', type(y))
+            print('x:', x.dtype, '\ty:', y.dtype)
             print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
-            print('pred shape:', pred.shape)
+            print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
             loss = criterion(y, pred)
