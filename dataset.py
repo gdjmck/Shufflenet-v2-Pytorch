@@ -56,7 +56,7 @@ class LabelData():
 
 def parse_anno(file):
     lines = file.readlines()
-    anno = np.empty((len(lines), 22), dtype=str)
+    anno = np.empty((len(lines), 22), dtype=object)
     for i, line in enumerate(lines):
         anno[i, :] = line.split(' ')[:-1]
     return anno
