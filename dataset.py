@@ -80,9 +80,9 @@ class Faceset(Dataset):
         img = functional.pad(img, padding)
         confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
         width, height = img.size
-        cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, 
-                        (padding[1] + label.face_box.y + label.face_box.height/2) / height,
-                        label.face_box.width / width,
+        cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
+                        (padding[1] + label.face_box.y + label.face_box.height/2) / height, \
+                        label.face_box.width / width, \
                         label.face_box.height / height
         
         eye_pos = label.eye_pos().tolist()
