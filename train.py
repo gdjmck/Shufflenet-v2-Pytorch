@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import ShuffleNetV2
 import dataset
+import os
 
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
@@ -13,6 +14,7 @@ def get_args():
     parser.add_argument('--epoch_start', type=int, default=0, help='start epoch to count from')
     parser.add_argument('--batch', type=int, default=8, help='batch size')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
+    parser.add_argument('--ckpt', type=str, default='./ckpt', help='checkpoint folder')
     # annotation
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
@@ -36,7 +38,7 @@ class Criterion(nn.Module):
         loss_face = (loss * self.face_mask).sum()
         loss_eye = (loss * self.eye_mask).sum()
         loss_conf = (loss * self.conf_mask).sum()
-        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.conf_mask * self.w_conf)).mean()
+        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.conf_mask * self.w_conf)).sum()
         return loss_optim, loss_face, loss_eye, loss_conf
 
 
@@ -75,9 +77,11 @@ if __name__ == '__main__':
             sum_face += loss_face.item()
             sum_eye += loss_eye.item()
             sum_conf += loss_conf.item()
-            print('\tBatch %d total loss: %.2f\tface:%.2f\teye:%.2f\tconf:%.2f'% \
+            print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
                 (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
         
         print('End of Epoch %d'%epoch)
         if best_conf_loss > sum_conf:
             best_conf_loss = sum_conf
+            torch.save(model.cpu().state_dict(), os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
+            print('Saved model.')
