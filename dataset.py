@@ -1,6 +1,7 @@
 import os
 import numpy as np
-import torch.utils.data.Dataset as Dataset
+import torch
+import torch.utils.data as data
 import torchvision.transforms.functional as functional
 from PIL import Image
 
@@ -59,7 +60,7 @@ def parse_anno(file):
         anno[i, :] = line.split(' ')[:-1]
     return anno
 
-class Faceset(Dataset):
+class Faceset(data.Dataset):
     def __init__(self, anno_file, image_folder, in_size=128):
         super(self, Dataset).__init__()
         assert anno_file.endswith('.txt')
