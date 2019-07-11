@@ -41,7 +41,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
     # setup optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterion = Criterion(weights=(0.5, 0.1, 1))
 
     for epoch in range(args.epoch_start, args.epochs):
