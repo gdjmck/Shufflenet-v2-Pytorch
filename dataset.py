@@ -62,7 +62,7 @@ def parse_anno(file):
 
 class Faceset(data.Dataset):
     def __init__(self, anno_file, image_folder, in_size=128):
-        super(self, Dataset).__init__()
+        super(self, data.Dataset).__init__()
         assert anno_file.endswith('.txt')
         with open(anno_file, 'r') as f:
             self.anno = parse_anno(f)
