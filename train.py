@@ -48,7 +48,7 @@ if __name__ == '__main__':
         
         for i, batch in enumerate(data):
             x, y = batch
-            x = x.to(device)
+            x, y = x.to(device), y.to(device)
             print('x:', x.dtype, '\ty:', y.dtype)
             print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
