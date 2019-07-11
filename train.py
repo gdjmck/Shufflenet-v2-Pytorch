@@ -25,6 +25,6 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch_start, args.epochs):
         
-        for i, batch in data:
+        for i, batch in enumerate(data):
             x, y = batch
             print(x.shape, y.shape)
