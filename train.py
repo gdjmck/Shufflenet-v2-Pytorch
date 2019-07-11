@@ -28,4 +28,4 @@ if __name__ == '__main__':
         for i, batch in enumerate(data):
             x, y = batch
             print('x:', type(x), '\ty:', type(y))
-            print('x shape:', x.shape, 'len(y):', len(y))
+            print('x shape:', x.shape, 'y shape:', y.shape)
