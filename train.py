@@ -21,10 +21,10 @@ def get_args():
 
 
 class Criterion(nn.Module):
-    def __init__(self, weights=[0.4, 1, 0.5], batch_size=4):
+    def __init__(self, weights=[0.4, 1, 0.5], batch_size=4, device=torch.device('cuda')):
         super(Criterion, self).__init__()
         self.loss_func = nn.SmoothL1Loss(reduction='none')
-        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]]*4 + [weights[2]]).repeat(batch_size, 1)
+        self.face_mask = torch.Tensor([weights[0]]*4 + [weights[1]]*4 + [weights[2]]).repeat(batch_size, 1).to(device)
 
     def __call__(self, gt, pred):
         loss = self.loss_func(gt, pred)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     model.to(device)
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch)
+    criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch, device=device)
 
     for epoch in range(args.epoch_start, args.epochs):
         
