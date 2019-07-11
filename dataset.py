@@ -97,4 +97,4 @@ class Faceset(data.Dataset):
         img = functional.resize(img, (self.in_size, self.in_size))
         img = self.transforms(img)
 
-        return functional.to_tensor(img), y
+        return img, y
