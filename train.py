@@ -43,7 +43,7 @@ if __name__ == '__main__':
     model.to(device)
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = Criterion(weights=(0.5, 0.1, 1))
+    criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch)
 
     for epoch in range(args.epoch_start, args.epochs):
         
