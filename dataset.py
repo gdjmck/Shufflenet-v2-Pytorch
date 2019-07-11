@@ -56,8 +56,7 @@ def parse_anno(file):
     lines = file.readlines()
     anno = np.empty((len(lines), 23))
     for i, line in enumerate(lines):
-        line = line[:-1]
-        anno[i, :] = line.split(' ')
+        anno[i, :] = line.split(' ')[:-1]
     return anno
 
 class Faceset(Dataset):
