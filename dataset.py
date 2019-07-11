@@ -93,7 +93,7 @@ class Faceset(data.Dataset):
         eye_pos[2] = (eye_pos[2] + padding[0]) / width
         eye_pos[3] = (eye_pos[3] + padding[1]) / height
 
-        y = np.array([cx, cy, w, h] + eye_pos + [confidence])
+        y = np.array([cx, cy, w, h] + eye_pos + [confidence], dtype=np.float32)
         img = functional.resize(img, (self.in_size, self.in_size))
         img = self.transforms(img)
 
