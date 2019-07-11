@@ -168,6 +168,7 @@ class ShuffleNetV2(nn.Module):
         x = x.view(-1, self.stage_out_channels[-1])
         #print('\tflatten:', x.shape)
         x = self.classifier(x)
+        x = nn.functional.sigmoid(x)
         #print('\tmodel output:', x.shape)
         return x
 
