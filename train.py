@@ -47,6 +47,7 @@ class Criterion(nn.Module):
 if __name__ == '__main__':
     args = get_args()
     best_conf_loss = np.Inf
+    epoch_start = args.epoch_start
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
@@ -56,6 +57,8 @@ if __name__ == '__main__':
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
         best_conf_loss = ckpt['conf_loss']
+        epoch_start = ckpt['epoch']
+        print('Loaded epoch %d'%epoch_start)
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
     # setup optimizer
@@ -63,7 +66,7 @@ if __name__ == '__main__':
     criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch, device=device)
 
     print('Start training from epoch %d'%args.epoch_start)
-    for epoch in range(args.epoch_start, args.epochs):
+    for epoch in range(epoch_start, args.epochs):
         
         sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
         for i, batch in enumerate(data):
