@@ -66,6 +66,7 @@ if __name__ == '__main__':
         best_conf_loss = ckpt['conf_loss']
         epoch_start = ckpt['epoch']
         print('Loaded epoch %d'%epoch_start)
+        epoch_start += 1
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
 
