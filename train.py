@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args = get_args()
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
-                                batch_size=args.batch, shuffle=True, num_workers=4) 
+                                batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
