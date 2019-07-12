@@ -5,6 +5,7 @@ import argparse
 import ShuffleNetV2
 import dataset
 import os
+import shutil
 
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
@@ -15,6 +16,7 @@ def get_args():
     parser.add_argument('--batch', type=int, default=8, help='batch size')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
     parser.add_argument('--ckpt', type=str, default='./ckpt', help='checkpoint folder')
+    parser.add_argument('--resume', action='store_true', help='load previous best model and resume training')
     # annotation
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
@@ -44,18 +46,22 @@ class Criterion(nn.Module):
 
 if __name__ == '__main__':
     args = get_args()
+    best_conf_loss = np.Inf
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
+    if args.resume:
+        ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
+        model.load_state_dict(ckpt['state_dict'])
+        best_conf_loss = ckpt['conf_loss']
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch, device=device)
 
-    best_conf_loss = np.Inf
     print('Start training from epoch %d'%args.epoch_start)
     for epoch in range(args.epoch_start, args.epochs):
         
@@ -81,7 +87,11 @@ if __name__ == '__main__':
                 (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
         
         print('End of Epoch %d'%epoch)
+        sum_conf /= i
         if best_conf_loss > sum_conf:
             best_conf_loss = sum_conf
-            torch.save(model.cpu().state_dict(), os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
+            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'conf_loss': sum_conf}, \
+                        os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
+            shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))
             print('Saved model.')
+            model.to(device)
