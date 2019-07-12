@@ -7,6 +7,9 @@ import dataset
 import os
 import shutil
 
+init_weight = (0.5, 0.1, 1)
+update_weight = (0.25, 0.05, 2.2)
+
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
     # train
@@ -35,6 +38,10 @@ class Criterion(nn.Module):
         self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]).repeat(batch_size, 1).to(device)
         self.conf_mask = torch.Tensor([0]*8+[1]).repeat(batch_size, 1).to(device)
 
+    def update_weights(self, weights):
+        assert len(weights) == 3
+        self.w_face_bb, self.w_eye, self.w_conf = weights
+
     def __call__(self, gt, pred):
         loss = self.loss_func(gt, pred)
         loss_face = (loss * self.face_mask).sum()
@@ -61,12 +68,18 @@ if __name__ == '__main__':
         print('Loaded epoch %d'%epoch_start)
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
+
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = Criterion(weights=(0.5, 0.1, 1), batch_size=args.batch, device=device)
+    criterion = Criterion(weights=init_weight, batch_size=args.batch, device=device)
+    # reduce the loss of face bounding box and eye position after half the training procedure
+    if epoch_start > args.epochs/2:
+        criterion.update_weights(update_weight)
 
     print('Start training from epoch %d'%args.epoch_start)
     for epoch in range(epoch_start, args.epochs):
+        if epoch == args.epochs//2 and epoch_start < args.epochs/2:
+            criterion.update_weights(update_weight)
         
         sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
         for i, batch in enumerate(data):
