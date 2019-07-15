@@ -88,7 +88,8 @@ class Faceset(data.Dataset):
         padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
         img = functional.pad(img, padding)
         #confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
-        confidence = util.iou_gt(label.occ_box, label.face_box)
+        confidence = util.iou_gt(label.occ_box.to_array(), label.face_box.to_array())
+        print(idx, label.occ_box.to_array(), label.face_box.to_array())
         width, height = img.size
         cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
                         (padding[1] + label.face_box.y + label.face_box.height/2) / height, \
