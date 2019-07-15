@@ -18,16 +18,19 @@ class LabelData():
         self.root = root
         self.filename = os.path.join(root, label[0])
         #self.img = cv2.imread(root+self.filename, -1)
-        self.face_box = BBox(label[1: 5])
-        self.eye_pos = label[5: 9].astype(int)
-        self.occ_box = BBox(label[9: 13])
-        self.occ_type = int(label[13])
-        self.occ_degree = int(label[14])
-        self.gender = label[15]
-        self.race = label[16]
-        self.orientation = label[17]
-        self.translate_orientation()
-        self.glasses_box = BBox(label[18:22])
+        try:
+            self.face_box = BBox(label[1: 5])
+            self.eye_pos = label[5: 9].astype(int)
+            self.occ_box = BBox(label[9: 13])
+            self.occ_type = int(label[13])
+            self.occ_degree = int(label[14])
+            self.gender = label[15]
+            self.race = label[16]
+            self.orientation = label[17]
+            self.translate_orientation()
+            self.glasses_box = BBox(label[18:22])
+        except ValueError:
+            print('Error Label:', label)
         
     def translate_orientation(self):
         if self.orientation == '1':
