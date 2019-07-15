@@ -24,7 +24,7 @@ if __name__ == '__main__':
     args = get_args()
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
-                                batch_size=1, shuffle=True, num_workers=4, drop_last=False)
+                                batch_size=args.batch, shuffle=False, num_workers=4, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
     ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
 
-    loss_func = Criterion(weights=weight, batch_size=1, device=device)
+    loss_func = Criterion(weights=weight, batch_size=args.batch, device=device)
     sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
     with torch.no_grad():
         for i, batch in enumerate(data):

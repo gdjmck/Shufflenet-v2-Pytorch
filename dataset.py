@@ -5,6 +5,7 @@ import torch.utils.data as data
 import torchvision.transforms.functional as functional
 import torchvision.transforms.transforms as transforms
 from PIL import Image
+import util
 
 class BBox():
     def __init__(self, data):
@@ -12,6 +13,9 @@ class BBox():
         self.y = int(data[1])
         self.width = int(data[2])
         self.height = int(data[3])
+    
+    def to_array(self):
+        return [self.x, self.y, self.width, self.height]
 
 class LabelData():
     def __init__(self, label, root='MAFA/images/'):
@@ -83,7 +87,8 @@ class Faceset(data.Dataset):
         pad = abs(height-width)
         padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
         img = functional.pad(img, padding)
-        confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
+        #confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
+        confidence = util.iou_gt(label.occ_box, label.face_box)
         width, height = img.size
         cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
                         (padding[1] + label.face_box.y + label.face_box.height/2) / height, \

@@ -8,6 +8,7 @@ def inside(pt, rect):
 
 
 # rect: (x, y, w, h)
+# 记录rect1的四个顶点在rect2内部的
 def intersect(rect1, rect2):
     pt_intersect = {'ul': rect1[:2],
                 'ur': (rect1[0]+rect1[2], rect1[1]),
