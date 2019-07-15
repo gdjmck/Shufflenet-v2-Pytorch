@@ -49,7 +49,7 @@ def iou_gt(box1, box2):
         return np.fabs(pt_corner[0] - pt_intersect[name][0]) * np.fabs(pt_corner[1] - pt_intersect[name][1]) / size_box2
     elif cnt == 2:
         if all(['l' in key for key in pt_intersect.keys()]):
-            x_right = box2[0] + box2[1]
+            x_right = box2[0] + box2[2]
             return np.fabs(pt_intersect['ul'][1] - pt_intersect['bl'][1]) * (x_right - pt_intersect['ul'][0]) / size_box2
         if all(['r' in key for key in pt_intersect.keys()]):
             x_left = box2[0]
@@ -66,7 +66,7 @@ def iou_gt(box1, box2):
 
 if __name__ == '__main__':
     # 测试通过
-    rect2 = [113, 95, 226, 226]
-    rect1 = [122, 166, 181, 221]
+    rect2 = [127, 94, 54, 54]
+    rect1 = [150, 100, 45, 43]
     print(intersect(rect1, rect2))
     print(iou_gt(rect1, rect2))
