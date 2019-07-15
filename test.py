@@ -3,6 +3,7 @@ import torch
 import ShuffleNetV2
 import dataset
 import os
+from train import Criterion
 
 weight = (0.25, 0.05, 2.2)
 
