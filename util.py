@@ -65,7 +65,8 @@ def iou_gt(box1, box2):
 
 
 if __name__ == '__main__':
-    rect2 = [34, 22, 50, 100]
-    rect1 = [35, 22, 49, 100]
+    # 测试通过
+    rect2 = [113, 95, 226, 226]
+    rect1 = [122, 166, 181, 221]
     print(intersect(rect1, rect2))
     print(iou_gt(rect1, rect2))
