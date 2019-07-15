@@ -77,7 +77,7 @@ if __name__ == '__main__':
     if epoch_start > args.epochs/2:
         criterion.update_weights(update_weight)
 
-    print('Start training from epoch %d'%args.epoch_start)
+    print('Start training from epoch %d'%epoch_start)
     for epoch in range(epoch_start, args.epochs):
         if epoch == args.epochs//2 and epoch_start < args.epochs/2:
             criterion.update_weights(update_weight)
