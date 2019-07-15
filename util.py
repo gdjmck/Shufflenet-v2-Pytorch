@@ -46,7 +46,7 @@ def iou_gt(box1, box2):
     elif cnt == 1:
         name = list(pt_intersect.keys())[0]
         pt_corner = opposite_corner(box2, name)
-        return np.fabs(pt_corner[0] - pt_intersect[name][0]) * np.fabs(pt_corner[1] - pt_corner[name][1]) / size_box2
+        return np.fabs(pt_corner[0] - pt_intersect[name][0]) * np.fabs(pt_corner[1] - pt_intersect[name][1]) / size_box2
     elif cnt == 2:
         if all(['l' in key for key in pt_intersect.keys()]):
             x_right = box2[0] + box2[1]
