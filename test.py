@@ -40,7 +40,7 @@ if __name__ == '__main__':
             x, y = x.to(device), y.to(device)
             pred = model(x)
 
-            loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
+            loss, loss_face, loss_eye, loss_conf = loss_func(y, pred)
 
             sum_loss += loss.item()
             sum_face += loss_face.item()
