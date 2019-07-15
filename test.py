@@ -24,7 +24,7 @@ if __name__ == '__main__':
     args = get_args()
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
-                                batch_size=args.batch, shuffle=False, num_workers=4, drop_last=args.batch!=1)
+                                batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
     ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
