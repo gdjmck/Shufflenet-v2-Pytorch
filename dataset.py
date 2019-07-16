@@ -98,6 +98,7 @@ class Faceset(data.Dataset):
             confidence = util.iou_gt(occ_box, label.face_box.to_array())
             assert confidence >= 0 and confidence <= 1
         width, height = img.size
+        assert width == height
         cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
                         (padding[1] + label.face_box.y + label.face_box.height/2) / height, \
                         label.face_box.width / width, \
