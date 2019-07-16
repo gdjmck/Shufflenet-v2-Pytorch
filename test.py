@@ -2,6 +2,7 @@ import argparse
 import torch
 import ShuffleNetV2
 import dataset
+import numpy as np
 import os
 import scipy.io as sio
 from train import Criterion
@@ -17,6 +18,7 @@ def get_args():
     # annotation
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
+    parser.add_argument('--save_mat', type=str, default='result_test.mat', help='file to save result')
     # model hyperparameter
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
@@ -43,7 +45,7 @@ if __name__ == '__main__':
             pred = model(x)
 
             loss, loss_face, loss_eye, loss_conf = loss_func(y, pred)
-            pred_rec[fn] = pred.cpu().data.numpy()[0]
+            pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
 
             sum_loss += loss.item()
             sum_face += loss_face.item()
@@ -51,4 +53,5 @@ if __name__ == '__main__':
             sum_conf += loss_conf.item()
             print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
                 (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
-        sio.savemat(os.path.join(args.ckpt, 'test_result.mat'), pred_rec)
+            if i > 200: break
+        sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
