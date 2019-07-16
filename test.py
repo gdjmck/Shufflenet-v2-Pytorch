@@ -23,7 +23,7 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     # dataloader
-    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
+    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
     with torch.no_grad():
         for i, batch in enumerate(data):
-            x, y = batch
+            x, y, fn = batch
             x, y = x.to(device), y.to(device)
             pred = model(x)
 

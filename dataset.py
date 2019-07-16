@@ -69,14 +69,15 @@ def parse_anno(file):
     return anno
 
 class Faceset(data.Dataset):
-    def __init__(self, anno_file, image_folder, in_size=128):
+    def __init__(self, anno_file, image_folder, in_size=128, test_mode=False):
         assert anno_file.endswith('.txt')
         with open(anno_file, 'r') as f:
             self.anno = parse_anno(f)
         self.image_folder = image_folder
         self.in_size = in_size
         self.transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
-        
+        self.test_mode = test_mode
+
     def __len__(self):
         return self.anno.shape[0]
     
@@ -112,4 +113,4 @@ class Faceset(data.Dataset):
         img = functional.resize(img, (self.in_size, self.in_size))
         img = self.transforms(img)
 
-        return img, y
+        return (img, y) if not self.test_mode else (img, y, label.filename)
