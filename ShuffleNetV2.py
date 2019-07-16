@@ -94,12 +94,46 @@ class InvertedResidual(nn.Module):
     def forward(self, x):
         if 1==self.benchmodel:
             x1 = x[:, :(x.shape[1]//2), :, :]
+            print('\tx1:', x1.shape)
             x2 = x[:, (x.shape[1]//2):, :, :]
+            print('\tx2:', x2.shape)
             out = self._concat(x1, self.banch2(x2))
+            print('\tout:', out.shape)
         elif 2==self.benchmodel:
             out = self._concat(self.banch1(x), self.banch2(x))
 
         return channel_shuffle(out, 2)
+
+
+class Decoder(nn.Module):
+    def __init__(self, block, inp, oup, scale=8):
+        super(Decoder, self).__init__()
+        self.scale = scale
+        self.block = block
+        assert (math.log2(scale)).is_integer()
+        times = int(math.log2(scale))
+        assert inp % scale == 0
+        '''
+        self.net_1 = nn.Sequential(block(int(inp), int(inp/2), 1, 2), 
+                                    nn.ConvTranspose2d(int(inp/2), int(inp/2), kernel_size=2, stride=2), 
+                                    nn.BatchNorm2d(int(inp/2)))
+        self.net_2 = nn.Sequential(block(int(inp/2), int(inp/4), 1, 2), 
+                                    nn.ConvTranspose2d(int(inp/4), int(inp/4), kernel_size=2, stride=2), 
+                                    nn.BatchNorm2d(int(inp/4)))
+        self.net_3 = nn.Sequential(block(int(inp/4), int(inp/8), 1, 2), 
+                                    nn.ConvTranspose2d(int(inp/8), int(inp/8), kernel_size=2, stride=2), 
+                                    nn.BatchNorm2d(int(inp/8)))
+        '''
+        self.net = nn.Sequential(*[nn.Sequential(block(int(inp/2**i), int(inp/2**(i+1)), 1, 2), 
+                                    nn.ConvTranspose2d(int(inp/2**(i+1)), int(inp/2**(i+1)), kernel_size=2, stride=2), 
+                                    nn.BatchNorm2d(int(inp/2**(i+1)))) for i in range(times)])
+        self.squeeze = nn.Conv2d(int(inp/2**times), oup, kernel_size=1)
+
+
+    def forward(self, x):
+        x_rec = self.net(x)
+        x_rec = self.squeeze(x_rec)
+        return x_rec
 
 
 class ShuffleNetV2(nn.Module):
@@ -153,23 +187,31 @@ class ShuffleNetV2(nn.Module):
         # building classifier
         self.classifier = nn.Sequential(nn.Linear(self.stage_out_channels[-1], n_class))
 
+        # building generator of reconstructing face region
+        print('scale:', input_size/4)
+        self.generator = Decoder(InvertedResidual, self.stage_out_channels[-1], 3, scale=int(input_size/4))
+
     def forward(self, x):
-        #print('\tmodel input:', x.shape)
+        print('\tmodel input:', x.shape)
         x = self.conv1(x)
-        #print('\tconv1:', x.shape)
+        print('\tconv1:', x.shape)
         x = self.maxpool(x)
-        #print('\tmaxpool:', x.shape)
+        print('\tmaxpool:', x.shape)
         x = self.features(x)
-        #print('\tfeatures:', x.shape)
+        print('\tfeatures:', x.shape)
         x = self.conv_last(x)
-        #print('\tconv last:', x.shape)
+        encode = x
+        x_recon = self.generator(encode)
+        print('reconstruct x:', x_recon.shape)
+
+        print('\tconv last:', x.shape)
         x = self.globalpool(x)
-        #print('\tglobal pool:', x.shape)
+        print('\tglobal pool:', x.shape)
         x = x.view(-1, self.stage_out_channels[-1])
-        #print('\tflatten:', x.shape)
+        print('\tflatten:', x.shape)
         x = self.classifier(x)
-        x = nn.functional.sigmoid(x)
-        #print('\tmodel output:', x.shape)
+        x = torch.sigmoid(x)
+        print('\tmodel output:', x.shape)
         return x
 
 def shufflenetv2(width_mult=1.):
@@ -179,5 +221,8 @@ def shufflenetv2(width_mult=1.):
 if __name__ == "__main__":
     """Testing
     """
-    model = ShuffleNetV2()
-    print(model)
+    import numpy as np
+    model = ShuffleNetV2(n_class=9, input_size=128)
+    #print(model)
+    x = torch.Tensor(np.zeros((1, 3, 128, 128)))
+    y = model(x)
