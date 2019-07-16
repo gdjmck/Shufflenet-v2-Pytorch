@@ -3,6 +3,7 @@ import torch
 import ShuffleNetV2
 import dataset
 import os
+import scipy.io as sio
 from train import Criterion
 
 weight = (0.25, 0.05, 2.2)
@@ -34,6 +35,7 @@ if __name__ == '__main__':
 
     loss_func = Criterion(weights=weight, batch_size=args.batch, device=device)
     sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
+    pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
             x, y, fn = batch
@@ -41,6 +43,7 @@ if __name__ == '__main__':
             pred = model(x)
 
             loss, loss_face, loss_eye, loss_conf = loss_func(y, pred)
+            pred_rec[fn] = pred.cpu().data.numpy()[0]
 
             sum_loss += loss.item()
             sum_face += loss_face.item()
@@ -48,3 +51,4 @@ if __name__ == '__main__':
             sum_conf += loss_conf.item()
             print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
                 (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+        sio.savemat(os.path.join(args.ckpt, 'test_result.mat'), pred_rec)
