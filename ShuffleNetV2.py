@@ -192,26 +192,26 @@ class ShuffleNetV2(nn.Module):
         self.generator = Decoder(InvertedResidual, self.stage_out_channels[-1], 3, scale=int(input_size/4))
 
     def forward(self, x):
-        print('\tmodel input:', x.shape)
+        #print('\tmodel input:', x.shape)
         x = self.conv1(x)
-        print('\tconv1:', x.shape)
+        #print('\tconv1:', x.shape)
         x = self.maxpool(x)
-        print('\tmaxpool:', x.shape)
+        #print('\tmaxpool:', x.shape)
         x = self.features(x)
-        print('\tfeatures:', x.shape)
+        #print('\tfeatures:', x.shape)
         x = self.conv_last(x)
         encode = x
         x_recon = self.generator(encode)
-        print('reconstruct x:', x_recon.shape)
+        #print('reconstruct x:', x_recon.shape)
 
-        print('\tconv last:', x.shape)
+        #print('\tconv last:', x.shape)
         x = self.globalpool(x)
-        print('\tglobal pool:', x.shape)
+        #print('\tglobal pool:', x.shape)
         x = x.view(-1, self.stage_out_channels[-1])
-        print('\tflatten:', x.shape)
+        #print('\tflatten:', x.shape)
         x = self.classifier(x)
         x = torch.sigmoid(x)
-        print('\tmodel output:', x.shape)
+        #print('\tmodel output:', x.shape)
         return x, x_recon
 
 def shufflenetv2(width_mult=1.):
