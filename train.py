@@ -104,7 +104,7 @@ if __name__ == '__main__':
         if epoch == args.epochs//2 and epoch_start < args.epochs/2:
             criterion.update_weights(update_weight)
         
-        sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
+        sum_loss, sum_face, sum_eye, sum_conf, sum_content = 0, 0, 0, 0, 0
         for i, batch in enumerate(data):
             x, y = batch
             x, y = x.to(device), y.to(device)
@@ -116,7 +116,6 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
             loss_recon = criterion_content(x_recon, x, y)
-            print('Label loss:', loss.item(), '\tContent loss:', loss_recon.item())
             loss += loss_recon
             loss.backward()
             optimizer.step()
@@ -125,15 +124,16 @@ if __name__ == '__main__':
             sum_face += loss_face.item()
             sum_eye += loss_eye.item()
             sum_conf += loss_conf.item()
-            print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
-                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+            sum_content += loss_recon.item()
+            print('\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
+                (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
             break
         break
 
         print('End of Epoch %d'%epoch)
-        sum_conf /= i
-        if best_conf_loss > sum_conf:
-            best_conf_loss = sum_conf
+        eval_metric = (sum_conf+sum_content) / (i+1)
+        if best_conf_loss > eval_metric:
+            best_conf_loss = eval_metric
             torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'conf_loss': sum_conf}, \
                         os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
             shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))
