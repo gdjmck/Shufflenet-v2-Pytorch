@@ -42,13 +42,27 @@ class Criterion(nn.Module):
         assert len(weights) == 3
         self.w_face_bb, self.w_eye, self.w_conf = weights
 
-    def __call__(self, gt, pred):
+    def forward(self, gt, pred):
         loss = self.loss_func(gt, pred)
         loss_face = (loss * self.face_mask).sum()
         loss_eye = (loss * self.eye_mask).sum()
         loss_conf = (loss * self.conf_mask).sum()
         loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.conf_mask * self.w_conf)).sum()
         return loss_optim, loss_face, loss_eye, loss_conf
+
+
+class ContentLoss(nn.Module):
+    def __init__(self, side_len=128, device=torch.device('cuda')):
+        super(ContentLoss, self).__init__()
+        self.side_len = side_len
+
+    def forward(self, pred_content, gt_content, gt_label):
+        print('\tContentLoss:', gt_label.shape)
+        mask = np.zeros(gt_content.shape, dtype=np.float32)
+        face_label = gt_label[:, :4]
+
+        return 0
+
 
 
 if __name__ == '__main__':
@@ -73,6 +87,7 @@ if __name__ == '__main__':
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterion = Criterion(weights=init_weight, batch_size=args.batch, device=device)
+    criterion_content = ContentLoss(side_len=args.in_size, device=device)
     # reduce the loss of face bounding box and eye position after half the training procedure
     if epoch_start > args.epochs/2:
         criterion.update_weights(update_weight)
@@ -88,11 +103,12 @@ if __name__ == '__main__':
             x, y = x.to(device), y.to(device)
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
-            pred = model(x)
+            pred, x_recon = model(x)
             #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
             loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
+            loss_recon = criterion_content(x_recon, x, y)
             loss.backward()
             optimizer.step()
 
@@ -102,7 +118,9 @@ if __name__ == '__main__':
             sum_conf += loss_conf.item()
             print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
                 (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
-        
+            break
+        break
+
         print('End of Epoch %d'%epoch)
         sum_conf /= i
         if best_conf_loss > sum_conf:

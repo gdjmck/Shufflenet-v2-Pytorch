@@ -212,7 +212,7 @@ class ShuffleNetV2(nn.Module):
         x = self.classifier(x)
         x = torch.sigmoid(x)
         print('\tmodel output:', x.shape)
-        return x
+        return x, x_recon
 
 def shufflenetv2(width_mult=1.):
     model = ShuffleNetV2(width_mult=width_mult)
