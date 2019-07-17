@@ -62,7 +62,7 @@ class ContentLoss(nn.Module):
         mask = np.zeros(gt_content.shape, dtype=np.float32)
         face_label = gt_label[:, :4].detach().cpu().numpy()
         face_label *= self.side_len
-        for i in face_label.shape[0]:
+        for i in range(face_label.shape[0]):
             cx, cy, w, h = face_label[i, :]
             mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
         mask_count = np.count_nonzero(mask)
