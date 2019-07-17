@@ -94,11 +94,11 @@ class InvertedResidual(nn.Module):
     def forward(self, x):
         if 1==self.benchmodel:
             x1 = x[:, :(x.shape[1]//2), :, :]
-            print('\tx1:', x1.shape)
+            #print('\tx1:', x1.shape)
             x2 = x[:, (x.shape[1]//2):, :, :]
-            print('\tx2:', x2.shape)
+            #print('\tx2:', x2.shape)
             out = self._concat(x1, self.banch2(x2))
-            print('\tout:', out.shape)
+            #print('\tout:', out.shape)
         elif 2==self.benchmodel:
             out = self._concat(self.banch1(x), self.banch2(x))
 
