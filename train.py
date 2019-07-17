@@ -60,7 +60,7 @@ class ContentLoss(nn.Module):
         self.loss_func = nn.SmoothL1Loss(reduction='none')
 
     def forward(self, pred_content, gt_content, gt_label):
-        mask = np.zeros(gt_content.shape, dtype=np.float32)
+        mask = np.zeros(pred_content.shape, dtype=np.float32)
         face_label = gt_label[:, :4].detach().cpu().numpy()
         face_label *= self.side_len
         for i in range(face_label.shape[0]):
@@ -69,7 +69,7 @@ class ContentLoss(nn.Module):
         mask_count = np.count_nonzero(mask)
         mask = torch.Tensor(mask).to(device)
 
-        return (self.loss_func(gt_content, pred_content) * mask).sum() / mask_count
+        return (self.loss_func(gt_content[:, 2:, ...], pred_content) * mask).sum() / mask_count
 
 
 
