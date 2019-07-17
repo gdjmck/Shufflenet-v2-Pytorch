@@ -188,7 +188,6 @@ class ShuffleNetV2(nn.Module):
         self.classifier = nn.Sequential(nn.Linear(self.stage_out_channels[-1], n_class))
 
         # building generator of reconstructing face region
-        print('scale:', input_size/4)
         self.generator = Decoder(InvertedResidual, self.stage_out_channels[-1], 3, scale=int(input_size/4))
 
     def forward(self, x):

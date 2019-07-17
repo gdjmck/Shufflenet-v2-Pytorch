@@ -58,7 +58,6 @@ class ContentLoss(nn.Module):
         self.loss_func = nn.SmoothL1Loss(reduction='none')
 
     def forward(self, pred_content, gt_content, gt_label):
-        print('\tContentLoss:', gt_label.shape)
         mask = np.zeros(gt_content.shape, dtype=np.float32)
         face_label = gt_label[:, :4].detach().cpu().numpy()
         face_label *= self.side_len
@@ -127,8 +126,6 @@ if __name__ == '__main__':
             sum_content += loss_recon.item()
             print('\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
                 (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
-            break
-        break
 
         print('End of Epoch %d'%epoch)
         eval_metric = (sum_conf+sum_content) / (i+1)
