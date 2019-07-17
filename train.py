@@ -6,6 +6,7 @@ import ShuffleNetV2
 import dataset
 import os
 import shutil
+from test import test
 
 init_weight = (0.5, 0.1, 1)
 update_weight = (0.25, 0.05, 2.2)
@@ -22,6 +23,7 @@ def get_args():
     parser.add_argument('--resume', action='store_true', help='load previous best model and resume training')
     # annotation
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
+    parser.add_argument('--anno_test', type=str, required=True, help='location of test data annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
     # model hyperparameter
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
@@ -78,6 +80,8 @@ if __name__ == '__main__':
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
+    data_test = torch.utils.data.DataLoader(dataset.Faceset(args.anno_test, os.path.join(args.img_folder, 'test'), args.in_size, test_mode=True),
+                                batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
     if args.resume:
@@ -100,6 +104,7 @@ if __name__ == '__main__':
 
     print('Start training from epoch %d'%epoch_start)
     for epoch in range(epoch_start, args.epochs):
+        model.train()
         if epoch == args.epochs//2 and epoch_start < args.epochs/2:
             criterion.update_weights(update_weight)
         
@@ -128,9 +133,9 @@ if __name__ == '__main__':
                 (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
 
         print('End of Epoch %d'%epoch)
-        eval_metric = (sum_conf+sum_content) / (i+1)
-        if best_conf_loss > eval_metric:
-            best_conf_loss = eval_metric
+        test_loss, _ = test(model, data_test, (criterion, criterion_content))
+        if best_conf_loss > test_loss:
+            best_conf_loss = test_loss
             torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'conf_loss': sum_conf}, \
                         os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
             shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))

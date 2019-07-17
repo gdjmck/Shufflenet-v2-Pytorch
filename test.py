@@ -23,6 +23,30 @@ def get_args():
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
 
+def test(model, data, loss_func):
+    model.eval()
+    sum_loss, sum_face, sum_eye, sum_conf, sum_recon = 0, 0, 0, 0, 0
+    pred_rec = {}
+    with torch.no_grad():
+        for i, batch in enumerate(data):
+            x, y, fn = batch
+            x, y = x.to(device), y.to(device)
+            pred, x_recon = model(x)
+
+            loss, loss_face, loss_eye, loss_conf = loss_func[0](y, pred)
+            loss_recon = loss_func[1](x_recon, x, y)
+            pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
+
+            sum_loss += loss.item()
+            sum_face += loss_face.item()
+            sum_eye += loss_eye.item()
+            sum_conf += loss_conf.item()
+            sum_recon += loss_recon.item()
+            print('\t\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
+                (i, sum_loss/(1+i), sum_recon/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+    
+    return sum_conf/(i+1), pred_rec
+
 if __name__ == '__main__':
     args = get_args()
     # dataloader
@@ -35,23 +59,8 @@ if __name__ == '__main__':
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
 
-    loss_func = Criterion(weights=weight, batch_size=args.batch, device=device)
-    sum_loss, sum_face, sum_eye, sum_conf = 0, 0, 0, 0
-    pred_rec = {}
-    with torch.no_grad():
-        for i, batch in enumerate(data):
-            x, y, fn = batch
-            x, y = x.to(device), y.to(device)
-            pred = model(x)
+    loss_func = (Criterion(weights=weight, batch_size=args.batch, device=device),
+                    ContentLoss(side_len=args.in_size, device=device))
 
-            loss, loss_face, loss_eye, loss_conf = loss_func(y, pred)
-            pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
-
-            sum_loss += loss.item()
-            sum_face += loss_face.item()
-            sum_eye += loss_eye.item()
-            sum_conf += loss_conf.item()
-            print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
-                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
-            if i > 200: break
-        sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
+    conf_loss, pred_rec = test(model, data, loss_func)
+    sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
