@@ -23,7 +23,7 @@ def get_args():
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
 
-def test(model, data, loss_func):
+def test(model, data, loss_func, device):
     model.eval()
     sum_loss, sum_face, sum_eye, sum_conf, sum_recon = 0, 0, 0, 0, 0
     pred_rec = {}
