@@ -55,13 +55,20 @@ class ContentLoss(nn.Module):
     def __init__(self, side_len=128, device=torch.device('cuda')):
         super(ContentLoss, self).__init__()
         self.side_len = side_len
+        self.loss_func = nn.SmoothL1Loss(reduction='none')
 
     def forward(self, pred_content, gt_content, gt_label):
         print('\tContentLoss:', gt_label.shape)
         mask = np.zeros(gt_content.shape, dtype=np.float32)
-        face_label = gt_label[:, :4]
+        face_label = gt_label[:, :4].detach().cpu().numpy()
+        face_label *= self.side_len
+        for i in face_label.shape[0]:
+            cx, cy, w, h = face_label[i, :]
+            mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
+        mask_count = np.count_nonzero(mask)
+        mask = torch.Tensor(mask).to(device)
 
-        return 0
+        return (self.loss_func(gt_content, pred_content) * mask).sum() / mask_count
 
 
 
@@ -109,6 +116,8 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
             loss_recon = criterion_content(x_recon, x, y)
+            print('Label loss:', loss.item(), '\tContent loss:', loss_recon.item())
+            loss += loss_recon
             loss.backward()
             optimizer.step()
 
