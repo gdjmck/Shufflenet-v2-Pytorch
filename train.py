@@ -6,7 +6,7 @@ import ShuffleNetV2
 import dataset
 import os
 import shutil
-from test import test
+import test
 
 init_weight = (0.5, 0.1, 1)
 update_weight = (0.25, 0.05, 2.2)
@@ -133,7 +133,7 @@ if __name__ == '__main__':
                 (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
 
         print('End of Epoch %d'%epoch)
-        test_loss, _ = test(model, data_test, (criterion, criterion_content))
+        test_loss, _ = test.test(model, data_test, (criterion, criterion_content))
         if best_conf_loss > test_loss:
             best_conf_loss = test_loss
             torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'conf_loss': sum_conf}, \
