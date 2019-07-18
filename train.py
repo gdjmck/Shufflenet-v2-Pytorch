@@ -57,7 +57,7 @@ class ContentLoss(nn.Module):
     def __init__(self, side_len=128, device=torch.device('cuda')):
         super(ContentLoss, self).__init__()
         self.side_len = side_len
-        self.loss_func = nn.SmoothL1Loss(reduction='none')
+        self.loss_func = nn.SmoothL1Loss()
         self.device = device
 
     def forward(self, pred_content, pred_label, gt_content, gt_label):
@@ -67,9 +67,15 @@ class ContentLoss(nn.Module):
         for i in range(face_gt_label.shape[0]):
             cx_gt, cy_gt, w_gt, h_gt = face_gt_label[i, :]
             cx_pred, cy_pred, w_pred, h_pred = face_pred_label[i, :]
-            w, h = min(int(w_gt/2), int(w_pred/2)), min(int(h_gt/2), int(h_pred))
-            loss += self.loss_func(gt_content[i, 2:, int(cy_gt-h): int(cy_gt+h), int(cx_gt-w): int(cx_gt+w)], \
-                                pred_content[i, :, int(cy_pred-h): int(cy_pred+h), int(cx_pred-w): int(cx_pred+w)]).mean()
+            w, h = min(int(w_gt/2), int(w_pred/2)), min(int(h_gt/2), int(h_pred/2))
+            patch_gt = gt_content[i, 2:, int(cy_gt-h): int(cy_gt+h), int(cx_gt-w): int(cx_gt+w)]
+            patch_pred = pred_content[i, :, int(cy_pred-h): int(cy_pred+h), int(cx_pred-w): int(cx_pred+w)]
+            try:
+                assert patch_gt.shape == patch_pred.shape
+            except AssertionError:
+                print('gt: ', cx_gt-w, cx_gt+w, cy_gt-h, cy_gt+h)
+                print('pred: ', cx_pred-w, cx_pred+w, cy_pred-h, cy_pred+h)
+            loss += self.loss_func(patch_gt, patch_pred)
             #mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
         #mask_count = np.count_nonzero(mask)
         #mask = torch.Tensor(mask).to(self.device)
