@@ -60,17 +60,21 @@ class ContentLoss(nn.Module):
         self.loss_func = nn.SmoothL1Loss(reduction='none')
         self.device = device
 
-    def forward(self, pred_content, gt_content, gt_label):
-        mask = np.zeros(pred_content.shape, dtype=np.float32)
-        face_label = gt_label[:, :4].detach().cpu().numpy()
-        face_label *= self.side_len
-        for i in range(face_label.shape[0]):
-            cx, cy, w, h = face_label[i, :]
-            mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
-        mask_count = np.count_nonzero(mask)
-        mask = torch.Tensor(mask).to(self.device)
+    def forward(self, pred_content, pred_label, gt_content, gt_label):
+        loss = 0
+        face_gt_label = gt_label[:, :4].detach().cpu().numpy() * self.side_len
+        face_pred_label = pred_label[:, :4].detach().cpu().numpy() * self.side_len
+        for i in range(face_gt_label.shape[0]):
+            cx_gt, cy_gt, w_gt, h_gt = face_gt_label[i, :]
+            cx_pred, cy_pred, w_pred, h_pred = face_pred_label[i, :]
+            w, h = min(w_gt, w_pred), min(h_gt, h_pred)
+            loss += self.loss_func(gt_content[i, 2:, int(cy_gt-h/2): int(cy_gt+h/2), int(cx_gt-w/2): int(cx_gt+w/2)], \
+                                pred_content[i, :, int(cy_pred-h/2): int(cy_pred+h/2), int(cx_pred-w/2): int(cx_pred+w/2)]).mean()
+            #mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
+        #mask_count = np.count_nonzero(mask)
+        #mask = torch.Tensor(mask).to(self.device)
 
-        return (self.loss_func(gt_content[:, 2:, ...], pred_content) * mask).sum() / mask_count
+        return loss / pred_content.shape[0]
 
 
 

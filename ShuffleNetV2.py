@@ -182,6 +182,7 @@ class ShuffleNetV2(nn.Module):
 
         # building last several layers
         self.conv_last = conv_1x1_bn(input_channel, self.stage_out_channels[-1])
+        self.compact = nn.Linear(int(input_size/32)**2, 1)
         self.globalpool = nn.Sequential(nn.AvgPool2d(int(input_size/32)))
         
         # building classifier
@@ -204,9 +205,12 @@ class ShuffleNetV2(nn.Module):
         #print('reconstruct x:', x_recon.shape)
 
         #print('\tconv last:', x.shape)
-        x = self.globalpool(x)
-        #print('\tglobal pool:', x.shape)
+        x = x.view(x.shape[0]*self.stage_out_channels[-1], -1)
+        x = self.compact(x)
         x = x.view(-1, self.stage_out_channels[-1])
+        #x = self.globalpool(x)
+        #print('\tglobal pool:', x.shape)
+        #x = x.view(-1, self.stage_out_channels[-1])
         #print('\tflatten:', x.shape)
         x = self.classifier(x)
         x = torch.sigmoid(x)
@@ -223,5 +227,5 @@ if __name__ == "__main__":
     import numpy as np
     model = ShuffleNetV2(n_class=9, input_size=128)
     #print(model)
-    x = torch.Tensor(np.zeros((1, 3, 128, 128)))
+    x = torch.Tensor(np.zeros((1, 5, 128, 128)))
     y = model(x)
