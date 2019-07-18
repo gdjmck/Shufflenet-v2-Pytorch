@@ -33,7 +33,7 @@ def test(model, data, loss_func, device):
             pred, x_recon = model(x)
 
             loss, loss_face, loss_eye, loss_conf = loss_func[0](y, pred)
-            loss_recon = loss_func[1](x_recon, x, y)
+            loss_recon = loss_func[1](x_recon, pred, x, y)
             pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
 
             sum_loss += loss.item()

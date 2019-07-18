@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
             optimizer.zero_grad()
             loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
-            loss_recon = criterion_content(x_recon, x, y)
+            loss_recon = criterion_content(x_recon, pred, x, y)
             loss += loss_recon
             loss.backward()
             optimizer.step()
