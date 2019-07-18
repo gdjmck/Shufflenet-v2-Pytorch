@@ -62,5 +62,5 @@ if __name__ == '__main__':
     loss_func = (Criterion(weights=weight, batch_size=args.batch, device=device),
                     ContentLoss(side_len=args.in_size, device=device))
 
-    conf_loss, pred_rec = test(model, data, loss_func)
+    conf_loss, pred_rec = test(model, data, loss_func, device)
     sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
