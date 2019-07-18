@@ -75,6 +75,7 @@ class ContentLoss(nn.Module):
             except AssertionError:
                 print('gt: ', cx_gt-w, cx_gt+w, cy_gt-h, cy_gt+h)
                 print('pred: ', cx_pred-w, cx_pred+w, cy_pred-h, cy_pred+h)
+                print('gt:', patch_gt.shape, '\tpred:', patch_pred.shape)
             loss += self.loss_func(patch_gt, patch_pred)
             #mask[i, :, int(cy-h/2): int(cy+h/2), int(cx-w/2): int(cx+w/2)] = 1
         #mask_count = np.count_nonzero(mask)
