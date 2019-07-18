@@ -108,7 +108,7 @@ class Faceset(data.Dataset):
                         label.face_box.width / width, \
                         label.face_box.height / height
         
-        eye_pos = label.eye_pos.tolist()
+        eye_pos = label.eye_pos.tolist() # x_l, y_l, x_r, y_r
         eye_pos[0] = (eye_pos[0] + padding[0]) / width
         eye_pos[1] = (eye_pos[1] + padding[1]) / height
         eye_pos[2] = (eye_pos[2] + padding[0]) / width

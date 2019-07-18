@@ -5,7 +5,6 @@ import dataset
 import numpy as np
 import os
 import scipy.io as sio
-from train import Criterion
 
 weight = (0.25, 0.05, 2.2)
 
@@ -48,6 +47,7 @@ def test(model, data, loss_func, device):
     return sum_conf/(i+1), pred_rec
 
 if __name__ == '__main__':
+    from train import Criterion, ContentLoss
     args = get_args()
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True),
