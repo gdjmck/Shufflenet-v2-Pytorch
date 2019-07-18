@@ -62,14 +62,16 @@ class ContentLoss(nn.Module):
 
     def forward(self, pred_content, pred_label, gt_content, gt_label):
         loss = 0
-        face_gt_label = gt_label[:, :4].detach().cpu().numpy() * self.side_len
-        face_pred_label = pred_label[:, :4].detach().cpu().numpy() * self.side_len
+        face_gt_label = (gt_label[:, :4].detach().cpu().numpy() * self.side_len).astype(int)
+        face_pred_label = (pred_label[:, :4].detach().cpu().numpy() * self.side_len).astype(int)
         for i in range(face_gt_label.shape[0]):
             cx_gt, cy_gt, w_gt, h_gt = face_gt_label[i, :]
             cx_pred, cy_pred, w_pred, h_pred = face_pred_label[i, :]
             w, h = min(int(w_gt/2), int(w_pred/2)), min(int(h_gt/2), int(h_pred/2))
-            patch_gt = gt_content[i, 2:, int(cy_gt-h): int(cy_gt+h), int(cx_gt-w): int(cx_gt+w)]
-            patch_pred = pred_content[i, :, int(cy_pred-h): int(cy_pred+h), int(cx_pred-w): int(cx_pred+w)]
+            w = min(min(self.side_len-1-cx_gt, min(w, cx_gt)), min(self.side_len-1-cx_pred, min(w, cx_pred)))
+            h = min(min(self.side_len-1-cy_gt, min(h, cy_gt)), min(self.side_len-1-cy_pred, min(h, cy_pred)))
+            patch_gt = gt_content[i, 2:, (cy_gt-h): (cy_gt+h), (cx_gt-w): (cx_gt+w)]
+            patch_pred = pred_content[i, :, (cy_pred-h): (cy_pred+h), (cx_pred-w): (cx_pred+w)]
             try:
                 assert patch_gt.shape == patch_pred.shape
             except AssertionError:
