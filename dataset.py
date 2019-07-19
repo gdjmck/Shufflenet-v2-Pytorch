@@ -92,17 +92,22 @@ class Faceset(data.Dataset):
         pad = abs(height-width)
         padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
         img = functional.pad(img, padding)
+        width, height = img.size
+        assert width == height
         #confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
         if (np.array(label.occ_box.to_array())==-1).all():
             confidence = 1
+            occ_box = [0]* 4
         else:
             occ_box = label.occ_box.to_array()
             occ_box[0] += label.face_box.x
             occ_box[1] += label.face_box.y
             confidence = util.iou_gt(occ_box, label.face_box.to_array())
             assert confidence >= 0 and confidence <= 1
-        width, height = img.size
-        assert width == height
+            occ_box[0] = (label.occ_box.x + label.face_box.x + padding[0] + label.occ_box.width/2) / width
+            occ_box[1] = (label.occ_box.y + label.face_box.y + padding[1] + label.occ_box.height/2) / height
+            occ_box[2] = (label.occ_box.width/2) / width
+            occ_box[3] = (label.occ_box.height/2) / height
         cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
                         (padding[1] + label.face_box.y + label.face_box.height/2) / height, \
                         label.face_box.width / width, \
@@ -114,7 +119,7 @@ class Faceset(data.Dataset):
         eye_pos[2] = (eye_pos[2] + padding[0]) / width
         eye_pos[3] = (eye_pos[3] + padding[1]) / height
 
-        y = np.array([cx, cy, w, h] + eye_pos + [confidence], dtype=np.float32)
+        y = np.array([cx, cy, w, h] + eye_pos + occ_box, dtype=np.float32)
         img = functional.resize(img, (self.in_size, self.in_size))
         img = self.transforms(img)
         img = torch.cat([self.coord_channel, img], 0)
