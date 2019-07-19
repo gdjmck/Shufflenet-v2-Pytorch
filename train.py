@@ -35,22 +35,22 @@ class Criterion(nn.Module):
         super(Criterion, self).__init__()
         self.loss_func = nn.SmoothL1Loss(reduction='none')
         assert len(weights) == 3
-        self.w_face_bb, self.w_eye, self.w_conf = weights
-        self.face_mask = torch.Tensor([1]*4 + [0]*5).repeat(batch_size, 1).to(device)
-        self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]).repeat(batch_size, 1).to(device)
-        self.conf_mask = torch.Tensor([0]*8+[1]).repeat(batch_size, 1).to(device)
+        self.w_face_bb, self.w_eye, self.w_occ_bb = weights
+        self.face_mask = torch.Tensor([1]*4 + [0]*8).repeat(batch_size, 1).to(device)
+        self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]*4).repeat(batch_size, 1).to(device)
+        self.occ_mask = torch.Tensor([0]*8+[1]*4).repeat(batch_size, 1).to(device)
 
     def update_weights(self, weights):
         assert len(weights) == 3
-        self.w_face_bb, self.w_eye, self.w_conf = weights
+        self.w_face_bb, self.w_eye, self.w_occ_bb = weights
 
     def forward(self, gt, pred):
         loss = self.loss_func(gt, pred)
         loss_face = (loss * self.face_mask).sum()
         loss_eye = (loss * self.eye_mask).sum()
-        loss_conf = (loss * self.conf_mask).sum()
-        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.conf_mask * self.w_conf)).sum()
-        return loss_optim, loss_face, loss_eye, loss_conf
+        loss_occ = (loss * self.occ_mask).sum()
+        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.occ_mask * self.w_occ_bb)).sum() / gt.shape[0]
+        return loss_optim, loss_face, loss_eye, loss_occ
 
 
 class ContentLoss(nn.Module):
@@ -89,7 +89,7 @@ class ContentLoss(nn.Module):
 
 if __name__ == '__main__':
     args = get_args()
-    best_conf_loss = np.Inf
+    best_bb_loss = np.Inf
     epoch_start = args.epoch_start
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
-        best_conf_loss = ckpt['conf_loss']
+        best_bb_loss = ckpt['bb_loss']
         epoch_start = ckpt['epoch']
         print('Loaded epoch %d'%epoch_start)
         epoch_start += 1
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         if epoch == args.epochs//2 and epoch_start < args.epochs/2:
             criterion.update_weights(update_weight)
         
-        sum_loss, sum_face, sum_eye, sum_conf, sum_content = 0, 0, 0, 0, 0
+        sum_loss, sum_face, sum_eye, sum_occ, sum_content = 0, 0, 0, 0, 0
         for i, batch in enumerate(data):
             x, y = batch
             x, y = x.to(device), y.to(device)
@@ -132,25 +132,25 @@ if __name__ == '__main__':
             #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
-            loss, loss_face, loss_eye, loss_conf = criterion(y, pred)
+            loss, loss_face, loss_eye, loss_occ = criterion(y, pred)
             loss_recon = criterion_content(x_recon, pred, x, y)
-            loss += loss_recon
+            loss += 0.5*loss_recon
             loss.backward()
             optimizer.step()
 
             sum_loss += loss.item()
             sum_face += loss_face.item()
             sum_eye += loss_eye.item()
-            sum_conf += loss_conf.item()
+            sum_occ += loss_occ.item()
             sum_content += loss_recon.item()
-            print('\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
-                (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+            print('\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
+                (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
 
         print('End of Epoch %d'%epoch)
         test_loss, _ = test.test(model, data_test, (criterion, criterion_content), device)
-        if best_conf_loss > test_loss:
-            best_conf_loss = test_loss
-            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'conf_loss': sum_conf}, \
+        if best_bb_loss > test_loss:
+            best_bb_loss = test_loss
+            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'occ_loss': sum_occ}, \
                         os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
             shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))
             print('Saved model.')
