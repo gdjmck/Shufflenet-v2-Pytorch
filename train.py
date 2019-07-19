@@ -97,7 +97,7 @@ if __name__ == '__main__':
     data_test = torch.utils.data.DataLoader(dataset.Faceset(args.anno_test, os.path.join(args.img_folder, 'test'), args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
-    model = ShuffleNetV2.ShuffleNetV2(n_class=9, input_size=args.in_size)
+    model = ShuffleNetV2.ShuffleNetV2(n_class=12, input_size=args.in_size)
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
