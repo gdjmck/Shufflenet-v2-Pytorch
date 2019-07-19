@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterion = Criterion(weights=init_weight, batch_size=args.batch, device=device)
-    criterion_content = ContentLoss(side_len=args.in_size, device=device)
+    # criterion_content = ContentLoss(side_len=args.in_size, device=device)
     # reduce the loss of face bounding box and eye position after half the training procedure
     if epoch_start > args.epochs/2:
         criterion.update_weights(update_weight)
@@ -128,13 +128,13 @@ if __name__ == '__main__':
             x, y = x.to(device), y.to(device)
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
-            pred, x_recon = model(x)
+            pred = model(x)
             #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
             loss, loss_face, loss_eye, loss_occ = criterion(y, pred)
-            loss_recon = criterion_content(x_recon, pred, x, y)
-            loss += 0.5*loss_recon
+            # loss_recon = criterion_content(x_recon, pred, x, y)
+            # loss += 0.5*loss_recon
             loss.backward()
             optimizer.step()
 
@@ -142,12 +142,12 @@ if __name__ == '__main__':
             sum_face += loss_face.item()
             sum_eye += loss_eye.item()
             sum_occ += loss_occ.item()
-            sum_content += loss_recon.item()
-            print('\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
-                (i, sum_loss/(1+i), sum_content/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
+            # sum_content += loss_recon.item()
+            print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
+                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
 
         print('End of Epoch %d'%epoch)
-        test_loss, _ = test.test(model, data_test, (criterion, criterion_content), device)
+        test_loss, _ = test.test(model, data_test, criterion, device)
         if best_bb_loss > test_loss:
             best_bb_loss = test_loss
             torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'occ_loss': sum_occ}, \

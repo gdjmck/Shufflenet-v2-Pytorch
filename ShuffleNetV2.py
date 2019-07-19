@@ -200,8 +200,8 @@ class ShuffleNetV2(nn.Module):
         x = self.features(x)
         #print('\tfeatures:', x.shape)
         x = self.conv_last(x)
-        encode = x
-        x_recon = self.generator(encode)
+        #encode = x
+        #x_recon = self.generator(encode)
         #print('reconstruct x:', x_recon.shape)
 
         #print('\tconv last:', x.shape)
@@ -215,7 +215,7 @@ class ShuffleNetV2(nn.Module):
         x = self.classifier(x)
         x = torch.sigmoid(x)
         #print('\tmodel output:', x.shape)
-        return x, x_recon
+        return x #, x_recon
 
 def shufflenetv2(width_mult=1.):
     model = ShuffleNetV2(width_mult=width_mult)
