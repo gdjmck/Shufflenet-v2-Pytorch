@@ -42,7 +42,7 @@ def test(model, data, loss_func, device):
             sum_occ += loss_occ.item()
             sum_recon += loss_recon.item()
             print('\t\tBatch %d total loss: %.4f\trecon:%.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
-                (i, sum_loss/(1+i), sum_recon/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_conf/(1+i)))
+                (i, sum_loss/(1+i), sum_recon/(i+1), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
     
     return sum_occ/(i+1), pred_rec
 
