@@ -77,7 +77,7 @@ class Faceset(data.Dataset):
         self.in_size = in_size
         self.transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
         self.test_mode = test_mode
-        col_idx = np.reshape(list(range(in_size)) * in_size, (in_size, in_size)).astype(np.float32) / (in_size-1)
+        col_idx = 2 * (-0.5 + np.reshape(list(range(in_size)) * in_size, (in_size, in_size)).astype(np.float32) / (in_size-1))
         row_idx = col_idx.transpose()
         self.coord_channel = torch.cat([torch.Tensor(col_idx[np.newaxis,]), 
                                         torch.Tensor(row_idx[np.newaxis,])], 0)
