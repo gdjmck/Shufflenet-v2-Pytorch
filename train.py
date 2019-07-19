@@ -101,7 +101,7 @@ if __name__ == '__main__':
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
-        best_bb_loss = ckpt['bb_loss']
+        best_bb_loss = ckpt['occ_loss']
         epoch_start = ckpt['epoch']
         print('Loaded epoch %d'%epoch_start)
         epoch_start += 1
