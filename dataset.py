@@ -68,6 +68,23 @@ def parse_anno(file):
         anno[i, :] = line.split(' ')[:-1]
     return anno
 
+
+def square(box, w, h):
+    pad = abs(box.height - box.width)
+    cut = 0
+    x_l, x_r, y_u, y_b = box.x, box.x+box.width, box.y, box.y+box.height
+    if w > h:
+        cut = max(0, box.height + pad - h)
+        y_u -= pad//2
+        y_b += (pad-pad//2)
+    else:
+        cut = max(0, box.width + pad - w)
+        x_l -= pad//2
+        x_r += (pad-pad//2)
+
+    
+
+
 class Faceset(data.Dataset):
     def __init__(self, anno_file, image_folder, in_size=128, test_mode=False):
         assert anno_file.endswith('.txt')
@@ -89,15 +106,17 @@ class Faceset(data.Dataset):
         label = LabelData(self.anno[idx, :], self.image_folder)
         img = Image.open(label.filename).convert('RGB')
         width, height = img.size
-        pad = abs(height-width)
-        padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
-        img = functional.pad(img, padding)
+        # pad = abs(height-width)
+        # padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
+        # img = functional.pad(img, padding)
         width, height = img.size
-        assert width == height
         #confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
         if (np.array(label.occ_box.to_array())==-1).all():
             confidence = 1
             occ_box = [0]* 4
+            pad = abs(label.face_box.height - label.face_box.width)
+
+            img = functional.crop(img, label.face_box.)
         else:
             occ_box = label.occ_box.to_array()
             occ_box[0] += label.face_box.x

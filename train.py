@@ -143,8 +143,8 @@ if __name__ == '__main__':
             sum_eye += loss_eye.item()
             sum_occ += loss_occ.item()
             # sum_content += loss_recon.item()
-            print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
-                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
+        print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
+            (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
 
         print('End of Epoch %d'%epoch)
         test_loss, _ = test.test(model, data_test, criterion, device)
