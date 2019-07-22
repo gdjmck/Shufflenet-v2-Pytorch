@@ -6,8 +6,6 @@ import numpy as np
 import os
 import scipy.io as sio
 
-weight = (0.25, 0.05, 2.2)
-
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
     # train
@@ -24,7 +22,7 @@ def get_args():
 
 def test(model, data, loss_func, device):
     model.eval()
-    sum_loss, sum_face, sum_eye, sum_occ = 0, 0, 0, 0
+    sum_loss = 0
     pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
@@ -32,19 +30,15 @@ def test(model, data, loss_func, device):
             x, y = x.to(device), y.to(device)
             pred = model(x)
 
-            loss, loss_face, loss_eye, loss_occ = loss_func(y, pred)
+            loss = loss_func(y, pred)
             #loss_recon = loss_func[1](x_recon, pred, x, y)
             pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
 
             sum_loss += loss.item()
-            sum_face += loss_face.item()
-            sum_eye += loss_eye.item()
-            sum_occ += loss_occ.item()
             #sum_recon += loss_recon.item()
-            print('\t\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tconf:%.4f'% \
-                (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
+            print('\t\tBatch %d total loss: %.4f'% (i, sum_loss/(1+i)))
     
-    return (sum_occ+sum_face)/(i+1), pred_rec
+    return (sum_loss)/(i+1), pred_rec
 
 if __name__ == '__main__':
     from train import Criterion
@@ -53,13 +47,13 @@ if __name__ == '__main__':
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
-    model = ShuffleNetV2.ShuffleNetV2(n_class=12, input_size=args.in_size)
+    model = ShuffleNetV2.ShuffleNetV2(n_class=8, input_size=args.in_size)
     ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
     model.load_state_dict(ckpt['state_dict'])
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
     model.to(device)
 
-    loss_func = Criterion(weights=weight, batch_size=args.batch, device=device)
+    loss_func = Criterion(batch_size=args.batch, device=device)
 
     conf_loss, pred_rec = test(model, data, loss_func, device)
     sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)

@@ -73,16 +73,19 @@ def square(box, w, h):
     pad = abs(box.height - box.width)
     cut = 0
     x_l, x_r, y_u, y_b = box.x, box.x+box.width, box.y, box.y+box.height
-    if w > h:
-        cut = max(0, box.height + pad - h)
+    if box.width > box.height:
+        # cut = max(0, box.height + pad - h)
         y_u -= pad//2
         y_b += (pad-pad//2)
     else:
-        cut = max(0, box.width + pad - w)
+        # cut = max(0, box.width + pad - w)
         x_l -= pad//2
         x_r += (pad-pad//2)
-
-    
+    assert (y_b-y_u) == (x_r-x_l)
+    assert (y_b - y_u < h) and (x_r - x_l < w)
+    x_move = max(-x_l, 0) + min(w-x_r, 0) #x_l < 0 or x_r > w
+    y_move = max(-y_u, 0) + min(h-y_b, 0)
+    return (x_l+x_move, y_u+y_move, x_r-x_l, y_b-y_u)
 
 
 class Faceset(data.Dataset):
@@ -109,38 +112,47 @@ class Faceset(data.Dataset):
         # pad = abs(height-width)
         # padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
         # img = functional.pad(img, padding)
-        width, height = img.size
-        #confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
-        if (np.array(label.occ_box.to_array())==-1).all():
-            confidence = 1
-            occ_box = [0]* 4
-            pad = abs(label.face_box.height - label.face_box.width)
-
-            img = functional.crop(img, label.face_box.)
-        else:
-            occ_box = label.occ_box.to_array()
-            occ_box[0] += label.face_box.x
-            occ_box[1] += label.face_box.y
-            confidence = util.iou_gt(occ_box, label.face_box.to_array())
-            assert confidence >= 0 and confidence <= 1
-            occ_box[0] = (label.occ_box.x + label.face_box.x + padding[0] + label.occ_box.width/2) / width
-            occ_box[1] = (label.occ_box.y + label.face_box.y + padding[1] + label.occ_box.height/2) / height
-            occ_box[2] = (label.occ_box.width/2) / width
-            occ_box[3] = (label.occ_box.height/2) / height
-        cx, cy, w, h = (padding[0] + label.face_box.x + label.face_box.width/2) / width, \
-                        (padding[1] + label.face_box.y + label.face_box.height/2) / height, \
-                        label.face_box.width / width, \
-                        label.face_box.height / height
+        # width, height = img.size
+        # confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
+        label.occ_box.x += label.face_box.x
+        label.occ_box.y += label.face_box.y
         
+        fo_x = min(label.face_box.x, label.occ_box.x)
+        fo_y = min(label.face_box.y, label.occ_box.y)
+        fo_w = max(label.face_box.x + label.face_box.width, label.occ_box.x + label.occ_box.width) - fo_x
+        fo_h = max(label.face_box.y + label.face_box.height, label.occ_box.y + label.occ_box.height) - fo_y
+        face_and_occ = BBox([fo_x, fo_y, fo_w, fo_h])
+        face_and_occ = BBox(square(face_and_occ, width, height))
+        img = functional.crop(img, face_and_occ.y, face_and_occ.x, face_and_occ.height, face_and_occ.width)
+        width, height = img.size
+
+        if label.occ_box.width + label.occ_box.height == 0:
+            occ_box = [0]* 4
+        else:
+            occ_box = [(label.occ_box.x + label.occ_box.width/2 - face_and_occ.x) / width, \
+                        (label.occ_box.y + label.occ_box.height/2 - face_and_occ.y) / height, \
+                        label.occ_box.width / width, \
+                        label.occ_box.height / height]
+        cx, cy, w, h = ((label.face_box.x + label.face_box.width/2 - face_and_occ.x) / width, \
+                        (label.face_box.y + label.face_box.height/2 - face_and_occ.y) / height, \
+                        label.face_box.width / width, label.face_box.height / height
+                         )
+        '''
         eye_pos = label.eye_pos.tolist() # x_l, y_l, x_r, y_r
         eye_pos[0] = (eye_pos[0] + padding[0]) / width
         eye_pos[1] = (eye_pos[1] + padding[1]) / height
         eye_pos[2] = (eye_pos[2] + padding[0]) / width
         eye_pos[3] = (eye_pos[3] + padding[1]) / height
-
-        y = np.array([cx, cy, w, h] + eye_pos + occ_box, dtype=np.float32)
+        '''
+        y = np.array([cx, cy, w, h] + occ_box, dtype=np.float32)
         img = functional.resize(img, (self.in_size, self.in_size))
         img = self.transforms(img)
         img = torch.cat([self.coord_channel, img], 0)
 
         return (img, y) if not self.test_mode else (img, y, label.filename)
+
+
+if __name__ == '__main__':
+    box = BBox([5, 10, 5, 20])
+    w, h = (50, 50)
+    print(square(box, w, h))

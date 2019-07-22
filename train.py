@@ -31,26 +31,16 @@ def get_args():
 
 
 class Criterion(nn.Module):
-    def __init__(self, weights=[0.5, 0.1, 1], batch_size=4, device=torch.device('cuda')):
+    def __init__(self, batch_size=4, device=torch.device('cuda')):
         super(Criterion, self).__init__()
         self.loss_func = nn.SmoothL1Loss(reduction='none')
-        assert len(weights) == 3
-        self.w_face_bb, self.w_eye, self.w_occ_bb = weights
-        self.face_mask = torch.Tensor([1]*4 + [0]*8).repeat(batch_size, 1).to(device)
-        self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]*4).repeat(batch_size, 1).to(device)
-        self.occ_mask = torch.Tensor([0]*8+[1]*4).repeat(batch_size, 1).to(device)
-
-    def update_weights(self, weights):
-        assert len(weights) == 3
-        self.w_face_bb, self.w_eye, self.w_occ_bb = weights
+        self.weight = torch.Tensor(([0.25]*2+[0.75]*2)*2).repeat(batch_size, 1).to(device)
+        #self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]*4).repeat(batch_size, 1).to(device)
 
     def forward(self, gt, pred):
-        loss = self.loss_func(gt, pred)
-        loss_face = (loss * self.face_mask).sum()
-        loss_eye = (loss * self.eye_mask).sum()
-        loss_occ = (loss * self.occ_mask).sum()
-        loss_optim = (loss * (self.face_mask * self.w_face_bb + self.eye_mask * self.w_eye + self.occ_mask * self.w_occ_bb)).sum() / gt.shape[0]
-        return loss_optim, loss_face, loss_eye, loss_occ
+        assert len(gt.shape) == 4
+        loss = (self.loss_func(gt, pred) * self.weight).sum() / gt.shape[0]
+        return loss
 
 
 class ContentLoss(nn.Module):
@@ -97,7 +87,7 @@ if __name__ == '__main__':
     data_test = torch.utils.data.DataLoader(dataset.Faceset(args.anno_test, os.path.join(args.img_folder, 'test'), args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
-    model = ShuffleNetV2.ShuffleNetV2(n_class=12, input_size=args.in_size)
+    model = ShuffleNetV2.ShuffleNetV2(n_class=8, input_size=args.in_size)
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
@@ -110,19 +100,20 @@ if __name__ == '__main__':
 
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = Criterion(weights=init_weight, batch_size=args.batch, device=device)
+    criterion = Criterion(batch_size=args.batch, device=device)
     # criterion_content = ContentLoss(side_len=args.in_size, device=device)
     # reduce the loss of face bounding box and eye position after half the training procedure
-    if epoch_start > args.epochs/2:
-        criterion.update_weights(update_weight)
+    #if epoch_start > args.epochs/2:
+    #    criterion.update_weights(update_weight)
 
     print('Start training from epoch %d'%epoch_start)
     for epoch in range(epoch_start, args.epochs):
         model.train()
+        '''
         if epoch == args.epochs//2 and epoch_start < args.epochs/2:
             criterion.update_weights(update_weight)
-        
-        sum_loss, sum_face, sum_eye, sum_occ, sum_content = 0, 0, 0, 0, 0
+        '''
+        sum_loss = 0
         for i, batch in enumerate(data):
             x, y = batch
             x, y = x.to(device), y.to(device)
@@ -132,25 +123,19 @@ if __name__ == '__main__':
             #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
-            loss, loss_face, loss_eye, loss_occ = criterion(y, pred)
+            loss = criterion(y, pred)
             # loss_recon = criterion_content(x_recon, pred, x, y)
             # loss += 0.5*loss_recon
             loss.backward()
             optimizer.step()
 
             sum_loss += loss.item()
-            sum_face += loss_face.item()
-            sum_eye += loss_eye.item()
-            sum_occ += loss_occ.item()
-            # sum_content += loss_recon.item()
-        print('\tBatch %d total loss: %.4f\tface:%.4f\teye:%.4f\tocc:%.4f'% \
-            (i, sum_loss/(1+i), sum_face/(1+i), sum_eye/(1+i), sum_occ/(1+i)))
+        print('\tEpoch %d total loss: %.4f'%(epoch, sum_loss/(1+i)))
 
-        print('End of Epoch %d'%epoch)
         test_loss, _ = test.test(model, data_test, criterion, device)
         if best_bb_loss > test_loss:
             best_bb_loss = test_loss
-            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'occ_loss': sum_occ}, \
+            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'loss': sum_loss}, \
                         os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
             shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))
             print('Saved model.')
