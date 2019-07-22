@@ -38,7 +38,6 @@ class Criterion(nn.Module):
         #self.eye_mask = torch.Tensor([0]*4+[1]*4+[0]*4).repeat(batch_size, 1).to(device)
 
     def forward(self, gt, pred):
-        assert len(gt.shape) == 4
         loss = (self.loss_func(gt, pred) * self.weight).sum() / gt.shape[0]
         return loss
 
