@@ -123,7 +123,7 @@ if __name__ == '__main__':
             #print('pred shape:', pred.shape, pred.dtype)
 
             optimizer.zero_grad()
-            loss = criterion(y, pred)
+            loss = criterion(pred, y)
             # loss_recon = criterion_content(x_recon, pred, x, y)
             # loss += 0.5*loss_recon
             loss.backward()
