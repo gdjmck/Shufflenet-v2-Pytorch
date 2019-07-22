@@ -163,11 +163,7 @@ class Faceset(data.Dataset):
         img_tensor = self.transforms(img_tensor)
         img_tensor = torch.cat([self.coord_channel, img_tensor], 0)
 
-<<<<<<< HEAD
-        return {'x': img_tensor, 'y': y} if not self.test_mode else {'x': img_tensor, 'y': y, 'fn': label.filename, 'img': img}
-=======
         return (img_tensor, y) if not self.test_mode else (img_tensor, y, label.filename)
->>>>>>> d129aa6c00e891185bc98ef8e9821859d7c574f4
 
 
 if __name__ == '__main__':
