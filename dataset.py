@@ -137,7 +137,9 @@ class Faceset(data.Dataset):
 
         img = functional.crop(img, face_and_occ.y, face_and_occ.x, face_and_occ.height, face_and_occ.width)
         if self.test_mode and self.img_ckpt is not None:
-            img.save(os.path.join(self.img_ckpt, label.filename))
+            fn = label.filename.rsplit('/', 1)[-1]
+            img.save(os.path.join(self.img_ckpt, fn))
+            print('save ', fn)
         width, height = img.size
 
         if label.occ_box.width + label.occ_box.height == 0:
