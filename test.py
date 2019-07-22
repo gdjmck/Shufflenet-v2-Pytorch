@@ -28,9 +28,9 @@ def test(model, data, loss_func, device, img_ckpt=None):
     with torch.no_grad():
         for i, batch in enumerate(data):
             if data.test_mode:
-                x, y, fn, img = batch
+                x, y, fn, img = batch['x'], batch['y'], batch['fn'], batch['img']
             else:
-                x, y = batch
+                x, y = batch['x'], batch['y']
             x, y = x.to(device), y.to(device)
             pred = model(x)
             if img_ckpt is not None and data.test_mode:
