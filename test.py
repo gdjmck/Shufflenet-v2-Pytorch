@@ -27,10 +27,13 @@ def test(model, data, loss_func, device, img_ckpt=None):
     pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
-            x, y, fn, img = batch
+            if data.test_mode:
+                x, y, fn, img = batch
+            else:
+                x, y = batch
             x, y = x.to(device), y.to(device)
             pred = model(x)
-            if img_ckpt is not None:
+            if img_ckpt is not None and data.test_mode:
                 img.save(os.path.join(img_ckpt, fn))
 
             loss = loss_func(y, pred)
