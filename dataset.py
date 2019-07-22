@@ -17,6 +17,10 @@ class BBox():
     def to_array(self):
         return [self.x, self.y, self.width, self.height]
 
+    def update(self, del_x, del_y):
+        self.x += del_x
+        self.y += del_y
+
 class LabelData():
     def __init__(self, label, root='MAFA/images/'):
         self.root = root
@@ -82,9 +86,9 @@ def square(box, w, h):
         x_l -= pad//2
         x_r += (pad-pad//2)
     assert (y_b-y_u) == (x_r-x_l)
-    assert (y_b - y_u <= h) and (x_r - x_l <= w)
-    x_move = max(-x_l, 0) + min(w-x_r, 0) #x_l < 0 or x_r > w
-    y_move = max(-y_u, 0) + min(h-y_b, 0)
+    
+    x_move = max(-x_l, 0) + min(w-x_r, 0) if x_r - x_l <= w else 0#x_l < 0 or x_r > w
+    y_move = max(-y_u, 0) + min(h-y_b, 0) if y_b - y_u <= h else 0
     return (x_l+x_move, y_u+y_move, x_r-x_l, y_b-y_u)
 
 
@@ -109,11 +113,6 @@ class Faceset(data.Dataset):
         label = LabelData(self.anno[idx, :], self.image_folder)
         img = Image.open(label.filename).convert('RGB')
         width, height = img.size
-        # pad = abs(height-width)
-        # padding = (pad//2, 0, pad-pad//2, 0) if height > width else (0, pad//2, 0, pad-pad//2)
-        # img = functional.pad(img, padding)
-        # width, height = img.size
-        # confidence = label.occ_box.width * label.occ_box.height / (label.face_box.width* label.face_box.height)
         label.occ_box.x += label.face_box.x
         label.occ_box.y += label.face_box.y
         
@@ -123,6 +122,18 @@ class Faceset(data.Dataset):
         fo_h = max(label.face_box.y + label.face_box.height, label.occ_box.y + label.occ_box.height) - fo_y
         face_and_occ = BBox([fo_x, fo_y, fo_w, fo_h])
         face_and_occ = BBox(square(face_and_occ, width, height))
+        # pad img if corners out of range
+        padding = [0 if face_and_occ.x >= 0 else -face_and_occ.x, \
+                    0 if face_and_occ.y >= 0 else -face_and_occ.y, \
+                    0 if face_and_occ.x + face_and_occ.width < width else face_and_occ.x + face_and_occ.width + 1 - width, \
+                    0 if face_and_occ.y + face_and_occ.height < height else face_and_occ.y + face_and_occ.height + 1 - height]
+        img = functional.pad(img, padding)
+        if padding[0] > 0 or padding[1] > 0:
+            print('update bbox label.')
+            label.face_box.update(padding[0], padding[1])
+            label.occ_box.update(padding[0], padding[1])
+            face_and_occ.update(padding[0], padding[1])
+
         img = functional.crop(img, face_and_occ.y, face_and_occ.x, face_and_occ.height, face_and_occ.width)
         width, height = img.size
 
