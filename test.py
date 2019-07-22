@@ -5,6 +5,7 @@ import dataset
 import numpy as np
 import os
 import scipy.io as sio
+from PIL import Image
 
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
@@ -20,15 +21,17 @@ def get_args():
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
 
-def test(model, data, loss_func, device):
+def test(model, data, loss_func, device, img_ckpt=None):
     model.eval()
     sum_loss = 0
     pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
-            x, y, fn = batch
+            x, y, fn, img = batch
             x, y = x.to(device), y.to(device)
             pred = model(x)
+            if img_ckpt is not None:
+                img.save(os.path.join(img_ckpt, fn))
 
             loss = loss_func(y, pred)
             #loss_recon = loss_func[1](x_recon, pred, x, y)
@@ -43,6 +46,9 @@ def test(model, data, loss_func, device):
 if __name__ == '__main__':
     from train import Criterion
     args = get_args()
+    img_ckpt = os.path.join(args.ckpt, 'img_ckpt')
+    if not os.path.exists(img_ckpt):
+        os.makedirs(img_ckpt)
     # dataloader
     data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
@@ -55,5 +61,5 @@ if __name__ == '__main__':
 
     loss_func = Criterion(batch_size=args.batch, device=device)
 
-    conf_loss, pred_rec = test(model, data, loss_func, device)
+    conf_loss, pred_rec = test(model, data, loss_func, device, img_ckpt)
     sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)

@@ -156,11 +156,11 @@ class Faceset(data.Dataset):
         eye_pos[3] = (eye_pos[3] + padding[1]) / height
         '''
         y = np.array([cx, cy, w, h] + occ_box, dtype=np.float32)
-        img = functional.resize(img, (self.in_size, self.in_size))
-        img = self.transforms(img)
-        img = torch.cat([self.coord_channel, img], 0)
+        img_tensor = functional.resize(img, (self.in_size, self.in_size))
+        img_tensor = self.transforms(img)
+        img_tensor = torch.cat([self.coord_channel, img], 0)
 
-        return (img, y) if not self.test_mode else (img, y, label.filename)
+        return (img_tensor, y) if not self.test_mode else (img_tensor, y, label.filename, img)
 
 
 if __name__ == '__main__':
