@@ -81,9 +81,9 @@ if __name__ == '__main__':
     best_bb_loss = np.Inf
     epoch_start = args.epoch_start
     # dataloader
-    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size),
+    data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
-    data_test = torch.utils.data.DataLoader(dataset.Faceset(args.anno_test, os.path.join(args.img_folder, 'test'), args.in_size, test_mode=True),
+    data_test = torch.utils.data.DataLoader(dataset.FaceClass(args.anno_test, args.img_folder, args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)
