@@ -93,7 +93,7 @@ def square(box, w, h):
 
 
 class Faceset(data.Dataset):
-    def __init__(self, anno_file, image_folder, in_size=128, test_mode=False):
+    def __init__(self, anno_file, image_folder, in_size=128, test_mode=False, img_ckpt=None):
         assert anno_file.endswith('.txt')
         with open(anno_file, 'r') as f:
             self.anno = parse_anno(f)
@@ -101,6 +101,7 @@ class Faceset(data.Dataset):
         self.in_size = in_size
         self.transforms = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
         self.test_mode = test_mode
+        self.img_ckpt = img_ckpt
         col_idx = 2 * (-0.5 + np.reshape(list(range(in_size)) * in_size, (in_size, in_size)).astype(np.float32) / (in_size-1))
         row_idx = col_idx.transpose()
         self.coord_channel = torch.cat([torch.Tensor(col_idx[np.newaxis,]), 
@@ -135,6 +136,8 @@ class Faceset(data.Dataset):
             face_and_occ.update(padding[0], padding[1])
 
         img = functional.crop(img, face_and_occ.y, face_and_occ.x, face_and_occ.height, face_and_occ.width)
+        if self.test_mode and self.img_ckpt is not None:
+            img.save(os.path.join(self.img_ckpt, label.filename))
         width, height = img.size
 
         if label.occ_box.width + label.occ_box.height == 0:
@@ -160,7 +163,11 @@ class Faceset(data.Dataset):
         img_tensor = self.transforms(img_tensor)
         img_tensor = torch.cat([self.coord_channel, img_tensor], 0)
 
+<<<<<<< HEAD
         return {'x': img_tensor, 'y': y} if not self.test_mode else {'x': img_tensor, 'y': y, 'fn': label.filename, 'img': img}
+=======
+        return (img_tensor, y) if not self.test_mode else (img_tensor, y, label.filename)
+>>>>>>> d129aa6c00e891185bc98ef8e9821859d7c574f4
 
 
 if __name__ == '__main__':
