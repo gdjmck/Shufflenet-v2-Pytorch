@@ -168,6 +168,29 @@ class Faceset(data.Dataset):
         return (img_tensor, y) if not self.test_mode else (img_tensor, y, label.filename)
 
 
+class FaceClass(data.Dataset):
+    def __init__(self, anno, size=128):
+        super(FaceClass, self).__init__()
+        with open(anno, 'r') as f:
+            self.anno = f.readlines()
+        self.size = size
+        self.transform = transforms.Compose([transforms.Resize((size, size)), transforms.ToTensor()])
+
+    def __len__(self):
+        return len(self.anno)
+
+    def __getitem__(self, idx):
+        anno = self.anno[idx].split(' ')
+        label = int(anno[1])
+        img = Image.open(anno[0]).convert('RGB')
+        w, h = image.size
+        padding = (0, int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2)) if w > h else
+                    (int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2), 0)
+        img = functional.pad(img, padding)
+        img = self.transform(img)
+        return img, label
+
+
 if __name__ == '__main__':
     box = BBox([5, 10, 5, 20])
     w, h = (50, 50)

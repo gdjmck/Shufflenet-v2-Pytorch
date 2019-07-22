@@ -86,7 +86,7 @@ if __name__ == '__main__':
     data_test = torch.utils.data.DataLoader(dataset.Faceset(args.anno_test, os.path.join(args.img_folder, 'test'), args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
-    model = ShuffleNetV2.ShuffleNetV2(n_class=8, input_size=args.in_size)
+    model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
@@ -99,7 +99,8 @@ if __name__ == '__main__':
 
     # setup optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    criterion = Criterion(batch_size=args.batch, device=device)
+    #criterion = Criterion(batch_size=args.batch, device=device)
+    criterion = nn.BCELoss()
     # criterion_content = ContentLoss(side_len=args.in_size, device=device)
     # reduce the loss of face bounding box and eye position after half the training procedure
     #if epoch_start > args.epochs/2:
@@ -114,7 +115,7 @@ if __name__ == '__main__':
         '''
         sum_loss = 0
         for i, batch in enumerate(data):
-            x, y = batch['x'], batch['y']
+            x, y = batch
             x, y = x.to(device), y.to(device)
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
