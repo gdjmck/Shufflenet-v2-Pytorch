@@ -157,7 +157,7 @@ class Faceset(data.Dataset):
         '''
         y = np.array([cx, cy, w, h] + occ_box, dtype=np.float32)
         img_tensor = functional.resize(img, (self.in_size, self.in_size))
-        img_tensor = self.transforms(img)
+        img_tensor = self.transforms(img_tensor)
         img_tensor = torch.cat([self.coord_channel, img_tensor], 0)
 
         return (img_tensor, y) if not self.test_mode else (img_tensor, y, label.filename, img)
