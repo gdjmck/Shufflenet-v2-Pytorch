@@ -183,7 +183,7 @@ class FaceClass(data.Dataset):
 
     def __getitem__(self, idx):
         anno = self.anno[idx].split(' ')
-        label = int(anno[1])
+        label = int(anno[1][:-1])
         if label == 1:
             img = Image.open(os.path.join(self.data_path, 'Occ/test' if self.test_mode else 'Occ', anno[0])).convert('RGB')
         else:
