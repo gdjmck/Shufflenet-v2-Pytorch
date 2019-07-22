@@ -27,7 +27,7 @@ def test(model, data, loss_func, device, img_ckpt=None):
     pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
-            if data.test_mode:
+            if data.dataset.test_mode:
                 x, y, fn = batch
             else:
                 x, y = batch['x'], batch['y']
