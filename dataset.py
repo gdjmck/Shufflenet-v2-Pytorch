@@ -136,6 +136,7 @@ class Faceset(data.Dataset):
             face_and_occ.update(padding[0], padding[1])
 
         assert face_and_occ.x + face_and_occ.width < img.size[0] and face_and_occ.y + face_and_occ.height < img.size[1]
+        assert face_and_occ.width == face_and_occ.height
         img = functional.crop(img, face_and_occ.y, face_and_occ.x, face_and_occ.height, face_and_occ.width)
         if self.test_mode and self.img_ckpt is not None:
             fn = label.filename.rsplit('/', 1)[-1]
