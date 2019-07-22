@@ -28,13 +28,11 @@ def test(model, data, loss_func, device, img_ckpt=None):
     with torch.no_grad():
         for i, batch in enumerate(data):
             if data.test_mode:
-                x, y, fn, img = batch
+                x, y, fn = batch
             else:
                 x, y = batch
             x, y = x.to(device), y.to(device)
             pred = model(x)
-            if img_ckpt is not None and data.test_mode:
-                img.save(os.path.join(img_ckpt, fn))
 
             loss = loss_func(y, pred)
             #loss_recon = loss_func[1](x_recon, pred, x, y)
@@ -53,7 +51,7 @@ if __name__ == '__main__':
     if not os.path.exists(img_ckpt):
         os.makedirs(img_ckpt)
     # dataloader
-    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True),
+    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True, img_ckpt=img_ckpt),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=8, input_size=args.in_size)
