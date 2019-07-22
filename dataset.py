@@ -193,7 +193,7 @@ class FaceClass(data.Dataset):
                     (int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2), 0)
         img = functional.pad(img, padding)
         img = self.transform(img)
-        return img, float(label)
+        return img, torch.Tensor([np.float16(label)])
 
 
 if __name__ == '__main__':
