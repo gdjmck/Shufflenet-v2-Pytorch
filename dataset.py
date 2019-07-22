@@ -188,7 +188,7 @@ class FaceClass(data.Dataset):
         else:
             img = Image.open(os.path.join(self.data_path, 'NoOcc', anno[0])).convert('RGB')
         w, h = img.size
-        padding = (0, int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2)) if w > h else
+        padding = (0, int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2)) if w > h else \
                     (int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2), 0)
         img = functional.pad(img, padding)
         img = self.transform(img)
