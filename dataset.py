@@ -123,10 +123,10 @@ class Faceset(data.Dataset):
         face_and_occ = BBox([fo_x, fo_y, fo_w, fo_h])
         face_and_occ = BBox(square(face_and_occ, width, height))
         # pad img if corners out of range
-        padding = [0 if face_and_occ.x >= 0 else -face_and_occ.x, \
-                    0 if face_and_occ.y >= 0 else -face_and_occ.y, \
-                    0 if face_and_occ.x + face_and_occ.width < width else face_and_occ.x + face_and_occ.width + 1 - width, \
-                    0 if face_and_occ.y + face_and_occ.height < height else face_and_occ.y + face_and_occ.height + 1 - height]
+        padding = (0 if face_and_occ.x >= 0 else int(-face_and_occ.x), \
+                    0 if face_and_occ.y >= 0 else int(-face_and_occ.y), \
+                    0 if face_and_occ.x + face_and_occ.width < width else int(face_and_occ.x + face_and_occ.width + 1 - width), \
+                    0 if face_and_occ.y + face_and_occ.height < height else int(face_and_occ.y + face_and_occ.height + 1 - height))
         img = functional.pad(img, padding)
         if padding[0] > 0 or padding[1] > 0:
             print('update bbox label.')
