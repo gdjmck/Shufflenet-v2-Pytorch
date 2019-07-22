@@ -27,22 +27,19 @@ def test(model, data, loss_func, device, img_ckpt=None):
     pred_rec = {}
     with torch.no_grad():
         for i, batch in enumerate(data):
-            if data.dataset.test_mode:
-                x, y, fn = batch
-            else:
-                x, y = batch['x'], batch['y']
+            x, y = batch
             x, y = x.to(device), y.to(device)
             pred = model(x)
 
             loss = loss_func(y, pred)
             #loss_recon = loss_func[1](x_recon, pred, x, y)
-            pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
+            #pred_rec[fn] = np.hstack([pred.cpu().data.numpy()[0], y.cpu().numpy()[0]])
 
             sum_loss += loss.item()
             #sum_recon += loss_recon.item()
             print('\t\tBatch %d total loss: %.4f'% (i, sum_loss/(1+i)))
     
-    return (sum_loss)/(i+1), pred_rec
+    return (sum_loss)/(i+1)
 
 if __name__ == '__main__':
     from train import Criterion
