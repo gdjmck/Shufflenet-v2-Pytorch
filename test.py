@@ -46,7 +46,7 @@ def test(model, data, loss_func, device, img_ckpt=None):
 if __name__ == '__main__':
     from train import Criterion
     args = get_args()
-    img_ckpt = os.path.join(args.ckpt, 'img_ckpt')
+    img_ckpt = os.path.join(args.ckpt, 'img_ckpt/')
     if not os.path.exists(img_ckpt):
         os.makedirs(img_ckpt)
     # dataloader
