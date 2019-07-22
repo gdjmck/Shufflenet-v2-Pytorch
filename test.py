@@ -40,7 +40,7 @@ def test(model, data, loss_func, device, img_ckpt=None):
 
             sum_loss += loss.item()
             #sum_recon += loss_recon.item()
-            print('\t\tBatch %d total loss: %.4f'% (i, sum_loss/(1+i)))
+        print('\t\tBatch %d total loss: %.4f'% (i, sum_loss/(1+i)))
     
     return (sum_loss)/(i+1), pred_rec
 

@@ -130,7 +130,7 @@ class Faceset(data.Dataset):
                     0 if face_and_occ.y + face_and_occ.height < height else int(face_and_occ.y + face_and_occ.height + 1 - height))
         img = functional.pad(img, padding)
         if padding[0] > 0 or padding[1] > 0:
-            print('update bbox label.')
+            # print('update bbox label.')
             label.face_box.update(padding[0], padding[1])
             label.occ_box.update(padding[0], padding[1])
             face_and_occ.update(padding[0], padding[1])

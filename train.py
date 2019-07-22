@@ -114,7 +114,7 @@ if __name__ == '__main__':
         '''
         sum_loss = 0
         for i, batch in enumerate(data):
-            x, y = batch['x'], batch['y']
+            x, y = batch
             x, y = x.to(device), y.to(device)
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
