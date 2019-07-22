@@ -82,7 +82,7 @@ def square(box, w, h):
         x_l -= pad//2
         x_r += (pad-pad//2)
     assert (y_b-y_u) == (x_r-x_l)
-    assert (y_b - y_u < h) and (x_r - x_l < w)
+    assert (y_b - y_u <= h) and (x_r - x_l <= w)
     x_move = max(-x_l, 0) + min(w-x_r, 0) #x_l < 0 or x_r > w
     y_move = max(-y_u, 0) + min(h-y_b, 0)
     return (x_l+x_move, y_u+y_move, x_r-x_l, y_b-y_u)
