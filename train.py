@@ -92,7 +92,7 @@ if __name__ == '__main__':
     if args.resume:
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
-        best_bb_loss = ckpt['occ_loss']
+        best_bb_loss = ckpt['loss']
         try:
             best_f1 = ckpt['f1']
         except KeyError:
