@@ -52,7 +52,7 @@ if __name__ == '__main__':
     if not os.path.exists(img_ckpt):
         os.makedirs(img_ckpt)
     # dataloader
-    data = torch.utils.data.DataLoader(dataset.Faceset(args.anno, args.img_folder, args.in_size, test_mode=True, img_ckpt=img_ckpt),
+    data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size, test_mode=True),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)
