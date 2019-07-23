@@ -127,7 +127,7 @@ if __name__ == '__main__':
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
-            m += measure(pred, gt)
+            m += measure(pred, y)
 
             optimizer.zero_grad()
             loss = criterion(pred, y)
