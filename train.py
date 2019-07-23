@@ -132,7 +132,7 @@ if __name__ == '__main__':
             sum_loss += loss.item()
         print('\tEpoch %d total loss: %.4f'%(epoch, sum_loss/(1+i)))
 
-        test_loss, _ = test.test(model, data_test, criterion, device)
+        test_loss = test.test(model, data_test, criterion, device)
         if best_bb_loss > test_loss:
             best_bb_loss = test_loss
             torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'loss': sum_loss}, \
