@@ -7,6 +7,7 @@ import dataset
 import os
 import shutil
 import test
+from util import measure, Measure
 
 init_weight = (0.5, 0.1, 1)
 update_weight = (0.25, 0.05, 2.2)
@@ -79,6 +80,7 @@ class ContentLoss(nn.Module):
 if __name__ == '__main__':
     args = get_args()
     best_bb_loss = np.Inf
+    best_f1 = 0
     epoch_start = args.epoch_start
     # dataloader
     data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
@@ -91,6 +93,10 @@ if __name__ == '__main__':
         ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
         model.load_state_dict(ckpt['state_dict'])
         best_bb_loss = ckpt['occ_loss']
+        try:
+            best_f1 = ckpt['f1']
+        except KeyError:
+            best_f1 = 0
         epoch_start = ckpt['epoch']
         print('Loaded epoch %d'%epoch_start)
         epoch_start += 1
@@ -114,13 +120,14 @@ if __name__ == '__main__':
             criterion.update_weights(update_weight)
         '''
         sum_loss = 0
+        m = Measure()
         for i, batch in enumerate(data):
             x, y = batch
             x, y = x.to(device), y.to(device)
             #print('x:', x.dtype, '\ty:', y.dtype)
             #print('x shape:', x.shape, 'y shape:', y.shape)
             pred = model(x)
-            #print('pred shape:', pred.shape, pred.dtype)
+            m += measure(pred, gt)
 
             optimizer.zero_grad()
             loss = criterion(pred, y)
@@ -130,12 +137,13 @@ if __name__ == '__main__':
             optimizer.step()
 
             sum_loss += loss.item()
-        print('\tEpoch %d total loss: %.4f'%(epoch, sum_loss/(1+i)))
+        print('\tEpoch %d total loss: %.4f\tf1: %.4f'%(epoch, sum_loss/(1+i), m.f1()))
 
-        test_loss = test.test(model, data_test, criterion, device)
-        if best_bb_loss > test_loss:
+        test_loss, f1 = test.test(model, data_test, criterion, device)
+        if f1 > best_f1 or (f1 == best_f1 and best_bb_loss > test_loss):
             best_bb_loss = test_loss
-            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'loss': sum_loss}, \
+            best_f1 = f1
+            torch.save({'state_dict': model.cpu().state_dict(), 'epoch': epoch, 'loss': sum_loss, 'f1': f1}, \
                         os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch))
             shutil.copy(os.path.join(args.ckpt, '%d_epoch_ckpt.pth'%epoch), os.path.join(args.ckpt, 'best_acc.pth'))
             print('Saved model.')
