@@ -18,6 +18,7 @@ def get_args():
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
     parser.add_argument('--save_mat', type=str, default='result_test.mat', help='file to save result')
+    parser.add_argument('--test_mode', action='store_true', help='add test_mode = True to Dataset class')
     # model hyperparameter
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
