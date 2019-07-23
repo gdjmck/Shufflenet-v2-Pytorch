@@ -79,7 +79,7 @@ def measure(pred, gt):
     size = 1
     for i in gt.shape:
         size = size * i
-    assert size = (tp + fp + tn + fn)
+    assert size == (tp + fp + tn + fn)
     return tp, fp, tn, fn
 
 
