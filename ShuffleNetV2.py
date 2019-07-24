@@ -205,12 +205,14 @@ class ShuffleNetV2(nn.Module):
         #print('reconstruct x:', x_recon.shape)
 
         #print('\tconv last:', x.shape)
+        '''
         x = x.view(x.shape[0]*self.stage_out_channels[-1], -1)
         x = self.compact(x)
         x = x.view(-1, self.stage_out_channels[-1])
-        #x = self.globalpool(x)
+        '''
+        x = self.globalpool(x)
         #print('\tglobal pool:', x.shape)
-        #x = x.view(-1, self.stage_out_channels[-1])
+        x = x.view(-1, self.stage_out_channels[-1])
         #print('\tflatten:', x.shape)
         x = self.classifier(x)
         x = torch.sigmoid(x)
