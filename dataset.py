@@ -169,11 +169,10 @@ class Faceset(data.Dataset):
 
 
 class FaceClass(data.Dataset):
-    def __init__(self, anno, data_path, size=128, test_mode=False):
+    def __init__(self, anno, data_path, size=128):
         super(FaceClass, self).__init__()
         with open(anno, 'r') as f:
             self.anno = f.readlines()
-        self.test_mode = test_mode
         self.data_path = data_path
         self.size = size
         self.transform = transforms.Compose([transforms.Resize((size, size)), transforms.ToTensor()])
@@ -185,9 +184,9 @@ class FaceClass(data.Dataset):
         anno = self.anno[idx].split(' ')
         label = int(anno[1][:-1])
         if label == 1:
-            img = Image.open(os.path.join(self.data_path, 'Occ/test' if self.test_mode else 'Occ', anno[0])).convert('RGB')
+            img = Image.open(os.path.join(self.data_path, 'Occ', anno[0])).convert('RGB')
         else:
-            img = Image.open(os.path.join(self.data_path, 'NoOcc/test' if self.test_mode else 'NoOcc', anno[0])).convert('RGB')
+            img = Image.open(os.path.join(self.data_path, 'NoOcc', anno[0])).convert('RGB')
         w, h = img.size
         padding = (0, int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2)) if w > h else \
                     (int(abs(w-h)/2), 0, int(abs(w-h)-abs(w-h)/2), 0)

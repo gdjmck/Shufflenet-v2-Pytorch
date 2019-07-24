@@ -85,7 +85,7 @@ if __name__ == '__main__':
     # dataloader
     data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=True, num_workers=4, drop_last=True) 
-    data_test = torch.utils.data.DataLoader(dataset.FaceClass(args.anno_test, args.img_folder, args.in_size, test_mode=True),
+    data_test = torch.utils.data.DataLoader(dataset.FaceClass(args.anno_test, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)

@@ -18,7 +18,6 @@ def get_args():
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
     parser.add_argument('--save_mat', type=str, default='result_test.mat', help='file to save result')
-    parser.add_argument('--test_mode', action='store_false', help='add test_mode = True to Dataset class')
     # model hyperparameter
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
@@ -53,7 +52,7 @@ if __name__ == '__main__':
     if not os.path.exists(img_ckpt):
         os.makedirs(img_ckpt)
     # dataloader
-    data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size, test_mode=args.test_mode),
+    data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
                                 batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)
