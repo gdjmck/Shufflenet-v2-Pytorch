@@ -1,4 +1,6 @@
 import numpy as np
+from PIL import Image
+import torchvision.transforms.functional as functional
 
 # pt: (x, y)
 def inside(pt, rect):
@@ -62,6 +64,37 @@ def iou_gt(box1, box2):
             return np.fabs(pt_intersect['bl'][0] - pt_intersect['br'][0]) * (pt_intersect['bl'][1] - y_up) / size_box2
     elif cnt == 4:
         return (pt_intersect['br'][0] - pt_intersect['ul'][0]) * (pt_intersect['br'][1] - pt_intersect['ul'][1]) / size_box2
+
+
+def prep_img(img, size=128):
+    if type(img) != Image.Image:
+        img = Image.fromarray(img)
+    if type(size) == int:
+        size = (size, size)
+    assert size[0] == size[1]
+    w, h = img.size
+    padding = (0, int((w-h)/2), 0, w-h-int((w-h)/2)) if w > h else \
+                (int((h-w)/2), 0, h-w-int((h-w)/2), 0)
+    img_tensor = functional.to_tensor(functional.resize(functional.pad(img, padding), size))
+    return img_tensor.unsqueeze(0)
+
+
+def dlib_face(img_bgr, detector, predictor):
+    rect = detector(img_bgr)
+    if len(rect) <= 0:
+        return None
+    kpt = predictor(img_bgr, rect[0])
+    h, w = img_bgr.shape[:2]
+    x_l, x_r, y_u, y_b = w, 0, h, 0
+    for i in range(68):
+        x, y = kpt.part(i).x, kpt.part(i).y
+        x, y = min(max(0, x), w), min(h, max(0, y))
+        x_l = min(x, x_l)
+        x_r = max(x, x_r)
+        y_u = min(y_u, y)
+        y_b = max(y_b, y)
+    return img_bgr[y_u: y_b, x_l: x_r, :]
+
 
 
 def measure(pred, gt):

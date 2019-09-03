@@ -6,7 +6,7 @@ import numpy as np
 import os
 import scipy.io as sio
 from PIL import Image
-from util import measure, Measure
+from util import measure, Measure, prep_img
 
 def get_args():
     parser = argparse.ArgumentParser(description='Face Occlusion Regression')
@@ -18,9 +18,18 @@ def get_args():
     parser.add_argument('--anno', type=str, required=True, help='location of annotation file')
     parser.add_argument('--img_folder', type=str, required=True, help='folder of image files in annotation file')
     parser.add_argument('--save_mat', type=str, default='result_test.mat', help='file to save result')
+    parser.add_argument('--raw-input', action='store_true', help='test on unlabelled data')
     # model hyperparameter
     parser.add_argument('--in_size', type=int, default=128, help='input tensor shape to put into model')
     return parser.parse_args()
+
+def test_single(img_bgr, model):
+    model.eval()
+    img = Image.fromarray(img_bgr[..., ::-1])
+    img_tensor = prep_img(img)
+    with torch.no_grad():
+        out = model(img_tensor)
+    return out.cpu().numpy()
 
 def test(model, data, loss_func, device, img_ckpt=None):
     model.eval()
@@ -51,18 +60,36 @@ if __name__ == '__main__':
     img_ckpt = os.path.join(args.ckpt, 'img_ckpt/')
     if not os.path.exists(img_ckpt):
         os.makedirs(img_ckpt)
-    # dataloader
-    data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
-                                batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
+
     # init model
     model = ShuffleNetV2.ShuffleNetV2(n_class=1, input_size=args.in_size)
     ckpt = torch.load(os.path.join(args.ckpt, 'best_acc.pth'))
     model.load_state_dict(ckpt['state_dict'])
     device = torch.device('cuda:{}'.format(args.gpu_ids[0])) if args.gpu_ids else torch.device('cpu')
-    model.to(device)
+    model.to(device)    
+    # dataloader
+    if args.raw_input:
+        import dlib
+        detector = dlib.get_frontal_face_detector()
+        imgs = os.listdir(args.img_folder)
+        with open('./raw_test.txt', 'w') as f:
+            for img in imgs:
+                img_path = os.path.join(args.img_folder, img)
+                img = cv2.imread(img_path, -1)
+                rects = detector(img, 0)
+                if len(rects) == 0:
+                    continue
+                rect = rects[0]
+                img = img[rect.top(): rect.bottom(), rect.left(): rect.right(), :]
+                img = prep_img(img, args.in_size).to(device)
+                result = model(img).cpu().data
+                f.writelines('{}\t{}\n'.format(img_path, result))
+    else:
+        data = torch.utils.data.DataLoader(dataset.FaceClass(args.anno, args.img_folder, args.in_size),
+                                batch_size=args.batch, shuffle=False, num_workers=1, drop_last=args.batch!=1)
 
-    loss_func = Criterion(batch_size=args.batch, device=device)
+        loss_func = Criterion(batch_size=args.batch, device=device)
 
-    conf_loss, f1 = test(model, data, loss_func, device, img_ckpt)
-    print('loss: %.4f\tf1: %.4f'%(conf_loss, f1))
-    #sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
+        conf_loss, f1 = test(model, data, loss_func, device, img_ckpt)
+        print('loss: %.4f\tf1: %.4f'%(conf_loss, f1))
+        #sio.savemat(os.path.join(args.ckpt, args.save_mat), pred_rec)
