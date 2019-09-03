@@ -67,7 +67,7 @@ def iou_gt(box1, box2):
 
 
 def prep_img(img, size=128):
-    if type(img) != Image.Image:
+    if type(img) == np.ndarray:
         img = Image.fromarray(img)
     if type(size) == int:
         size = (size, size)
